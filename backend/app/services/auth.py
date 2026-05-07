@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
+from email.utils import formataddr
 import hashlib
 import re
 import secrets
@@ -15,11 +16,13 @@ from ..config import (
     SMTP_USERNAME,
     SMTP_PASSWORD,
     SMTP_FROM,
-    SMTP_USE_TLS,
+SMTP_USE_TLS,
 )
 from ..models.user import User
 
 import bcrypt
+
+FORUM_EMAIL_NAME = "柒月半论坛"
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -144,7 +147,7 @@ def send_email(to_email: str, subject: str, body: str) -> bool:
 
     message = EmailMessage()
     message["Subject"] = subject
-    message["From"] = SMTP_FROM
+    message["From"] = formataddr((FORUM_EMAIL_NAME, SMTP_FROM))
     message["To"] = to_email
     message.set_content(body)
 
@@ -171,10 +174,11 @@ def send_password_reset_code(to_email: str, code: str) -> bool:
 def send_email_verification_code(to_email: str, code: str) -> bool:
     return send_email(
         to_email,
-        "Email verification code",
-        "You are binding this email to your account.\n\n"
-        f"Your verification code is: {code}\n\n"
-        "This code expires in 10 minutes. If this was not you, you can ignore this email.",
+        "柒月半论坛邮箱绑定验证码",
+        "你正在进行柒月半论坛邮箱绑定。\n\n"
+        f"你的验证码是：{code}\n\n"
+        "验证码 10 分钟内有效。\n\n"
+        "如果这不是你的操作，可以忽略这封邮件。",
     )
 
 
