@@ -1,0 +1,123 @@
+.animated-comb-container {
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    transform-origin: 50% 0%;
+    transition: all var(--transition-normal, 0.3s ease);
+}
+
+.animated-comb-container:hover {
+    filter: drop-shadow(0 0 20px rgba(220, 50, 50, 0.6));
+}
+
+.animated-comb-container svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+}
+
+.avatar-static-group {
+    transform-origin: 50% 50%;
+}
+
+/* 符纸飘动 - 大幅度悬浮摆荡 */
+.talisman-float {
+    transform-origin: 50% 5%;
+    animation: talismanDrift 5s ease-in-out infinite;
+}
+
+@keyframes talismanDrift {
+    0% {
+        transform: translateY(0) rotate(-5deg) skewX(-1deg) scale(1);
+    }
+
+    20% {
+        transform: translateY(-6px) rotate(3deg) skewX(1deg) scale(1.02);
+    }
+
+    40% {
+        transform: translateY(-2px) rotate(6deg) skewX(2deg) scale(0.99);
+    }
+
+    60% {
+        transform: translateY(-8px) rotate(-3deg) skewX(-1.5deg) scale(1.03);
+    }
+
+    80% {
+        transform: translateY(-1px) rotate(4deg) skewX(1deg) scale(1);
+    }
+
+    100% {
+        transform: translateY(0) rotate(-5deg) skewX(-1deg) scale(1);
+    }
+}
+
+/* 符文脉冲发光 */
+.rune-pulse {
+    animation: runePulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes runePulse {
+    0% {
+        opacity: 0.7;
+        filter: url(#epRuneGlow) brightness(0.9);
+    }
+
+    50% {
+        opacity: 1;
+        filter: url(#epRuneGlow) brightness(1.3);
+    }
+
+    100% {
+        opacity: 0.75;
+        filter: url(#epRuneGlow) brightness(1);
+    }
+}
+
+/* 灵光闪烁 */
+.spirit-flicker {
+    animation: spiritFlicker 2s ease-in-out infinite;
+}
+
+@keyframes spiritFlicker {
+
+    0%,
+    100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+
+    30% {
+        opacity: 0.9;
+        transform: scale(1.2);
+    }
+
+    60% {
+        opacity: 0.4;
+        transform: scale(0.9);
+    }
+
+    80% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+}
+
+/* 印章呼吸 */
+.seal-breathe {
+    animation: sealBreathe 4s ease-in-out infinite alternate;
+}
+
+@keyframes sealBreathe {
+    0% {
+        opacity: 0.5;
+    }
+
+    100% {
+        opacity: 0.9;
+    }
+}

@@ -1,0 +1,126 @@
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: rgba(10, 14, 20, 0.8);
+    position: relative;
+    z-index: 10;
+    border-bottom: 1px solid var(--color-border-dim);
+}
+
+.navbar-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-lg);
+    background: transparent;
+    color: var(--color-accent);
+    /* 修改为默认红色 */
+    font-family: var(--font-serif);
+    font-size: 1.2rem;
+    /* 放大字号 */
+    font-weight: 700;
+    letter-spacing: 2px;
+    border-radius: 8px;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.navbar-icon {
+    display: none;
+    /* 桌面端隐藏图标 */
+    font-size: 1.2rem;
+}
+
+.navbar-item:hover {
+    color: var(--color-accent-bright);
+    text-shadow: 0 0 8px var(--color-red-glow);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.navbar-item.active {
+    color: #fff;
+    /* 选中的字变白或保持亮红以区分 */
+    background: var(--color-accent);
+    box-shadow: 0 0 10px var(--color-red-glow);
+}
+
+/* 移动端到底部 Tab Bar 布局 */
+@media (max-width: 768px) {
+    .navbar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 6px 10px calc(6px + env(safe-area-inset-bottom, 0px));
+        background: rgba(10, 14, 20, 0.98);
+        border-top: 1px solid var(--color-border-dim);
+        border-bottom: none;
+        backdrop-filter: blur(16px);
+        justify-content: space-around;
+        gap: 0;
+        z-index: 10;
+        /* 调低 z-index，防止遮挡浮窗按钮 */
+        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.5);
+    }
+
+    .navbar-item {
+        flex-direction: column;
+        padding: 10px 0;
+        /* 调大点击区域 */
+        font-size: 1.1rem;
+        /* 放大移动端字号 */
+        letter-spacing: 1px;
+        width: 60px;
+        flex: 1;
+        border-radius: 0;
+    }
+
+    .navbar-icon {
+        display: none;
+        /* 彻底隐藏图标 */
+    }
+
+    .navbar-item.active {
+        background: transparent;
+        color: var(--color-accent-bright);
+        text-shadow: 0 0 12px var(--color-red-glow);
+        box-shadow: none;
+        /* 移除选中时的背景框 */
+    }
+
+    .navbar-item:hover {
+        background: transparent;
+        color: var(--color-accent-bright);
+    }
+}
+
+/* 提醒徽标 */
+.nav-unread-badge {
+    position: absolute;
+    top: 2px;
+    right: 5px;
+    background-color: var(--color-accent);
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 12px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+    line-height: 1.2;
+    z-index: 2;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+    .nav-unread-badge {
+        top: 2px;
+        right: 50%;
+        transform: translateX(18px);
+        font-size: 0.6rem;
+        padding: 1px 4px;
+        box-shadow: none;
+    }
+}

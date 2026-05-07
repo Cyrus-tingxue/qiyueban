@@ -1,0 +1,57 @@
+.layout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+/* 背景网点纹理 */
+.layout::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* 背景心脏图片 */
+.layout-bg-image {
+    position: fixed;
+    bottom: -5%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 500px;
+    height: auto;
+    opacity: 0.12;
+    pointer-events: none;
+    z-index: 0;
+    filter: saturate(0.5) brightness(0.6);
+}
+
+/* 暗角效果 */
+.layout::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.6) 100%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.layout-content {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (max-width: 768px) {
+    .layout-content {
+        padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+        /* 为底部固定的 NavBar 留出空间 */
+    }
+}

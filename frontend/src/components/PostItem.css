@@ -1,0 +1,157 @@
+.post-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-accent);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    animation: fadeIn 0.4s ease backwards;
+}
+
+.post-item:hover {
+    background: var(--color-bg-card-hover);
+    border-color: var(--color-accent);
+    transform: translateX(4px);
+    box-shadow: -4px 0 20px var(--color-red-glow);
+}
+
+/* 类别图标 */
+.post-item-icon {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+    /* 允许悬脱的红绳铜钱及流苏溢出背景框显示 */
+}
+
+.post-item-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: brightness(0.9) saturate(1.2);
+}
+
+.post-item-icon-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(196, 43, 43, 0.15);
+    border: 1px solid var(--color-border-dim);
+    font-size: 1.4rem;
+}
+
+/* 帖子内容 */
+.post-item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.post-item-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    line-height: 1.5;
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-sm);
+}
+
+.post-item-category {
+    font-family: var(--font-serif);
+    color: var(--color-accent);
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.post-item-text {
+    color: var(--color-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.post-item-meta {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-xs);
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+}
+
+.post-item-thumbnail {
+    margin-top: var(--spacing-sm);
+    max-width: 200px;
+    max-height: 150px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.post-item-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* 移动端压缩级适配 */
+@media (max-width: 768px) {
+    .post-item {
+        padding: var(--spacing-sm) var(--spacing-md);
+        gap: var(--spacing-sm);
+        /* 布局隔离，减少重绘范围 */
+        contain: layout style paint;
+    }
+
+    .post-item:hover {
+        /* 移动端去除耗性能的 box-shadow */
+        box-shadow: none;
+    }
+
+    .post-item-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    /* 关键性能优化：移动端禁用SVG滤镜 */
+    .post-item-icon svg * {
+        filter: none !important;
+    }
+
+    /* GPU合成层加速 */
+    .post-item-icon .animated-avatar-container,
+    .post-item-icon .animated-coin-container,
+    .post-item-icon .animated-comb-container,
+    .talisman-float,
+    .rune-pulse,
+    .spirit-flicker {
+        will-change: transform;
+        contain: layout style paint;
+    }
+
+    .post-item-icon-placeholder {
+        font-size: 1rem;
+    }
+
+    .post-item-title {
+        font-size: 0.85rem;
+        gap: var(--spacing-xs);
+    }
+
+    .post-item-category {
+        font-size: 0.8rem;
+    }
+
+    .post-item-meta {
+        font-size: 0.65rem;
+        gap: var(--spacing-sm);
+    }
+}

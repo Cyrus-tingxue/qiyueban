@@ -1,0 +1,232 @@
+.animated-avatar-container {
+    width: 90px;
+    height: 90px;
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.animated-avatar-container:hover {
+    transform: scale(1.1) rotate(1.5deg);
+}
+
+.animated-avatar-container svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.avatar-static-group {
+    transform-origin: 50% 50%;
+}
+
+.candle-animated-group {
+    transform-origin: 50% 90%;
+    animation: elegantSway 7s ease-in-out infinite alternate;
+}
+
+@keyframes elegantSway {
+    0% {
+        transform: rotate(-1.5deg);
+    }
+
+    100% {
+        transform: rotate(2deg);
+    }
+}
+
+.flame-pulsate {
+    transform-origin: 49px 34px;
+    animation: flameDance 0.15s ease-in-out infinite alternate;
+}
+
+@keyframes flameDance {
+    0% {
+        transform: scaleX(0.95) scaleY(1.03) rotate(-1.5deg) skewX(-2deg);
+    }
+
+    100% {
+        transform: scaleX(1.05) scaleY(0.97) rotate(1.5deg) skewX(2deg);
+    }
+}
+
+.flame-aura {
+    transform-origin: 49px 34px;
+    animation: auraPulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes auraPulse {
+    0% {
+        opacity: 0.2;
+        transform: scale(0.9);
+    }
+
+    100% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
+}
+
+/* Smoke drift animations */
+.smoke-anim-1,
+.smoke-anim-2 {
+    transform-origin: 49px 30px;
+}
+
+.smoke-anim-1 {
+    animation: smokeDrift1 4s ease-in-out infinite;
+}
+
+.smoke-anim-2 {
+    animation: smokeDrift2 5s ease-in-out infinite 2s;
+}
+
+@keyframes smokeDrift1 {
+    0% {
+        transform: translateY(0) scale(0.8);
+        opacity: 0;
+    }
+
+    30% {
+        opacity: 0.6;
+    }
+
+    100% {
+        transform: translateY(-15px) scale(1.4) rotate(8deg);
+        opacity: 0;
+    }
+}
+
+@keyframes smokeDrift2 {
+    0% {
+        transform: translateY(0) scale(0.8);
+        opacity: 0;
+    }
+
+    30% {
+        opacity: 0.5;
+    }
+
+    100% {
+        transform: translateY(-12px) scale(1.5) rotate(-10deg);
+        opacity: 0;
+    }
+}
+
+/* Sparks flying up */
+.sparks-group .spark {
+    opacity: 0;
+}
+
+.spark.s1 {
+    animation: flyUp1 2s linear infinite;
+}
+
+.spark.s2 {
+    animation: flyUp2 1.8s linear infinite 0.7s;
+}
+
+.spark.s3 {
+    animation: flyUp3 2.5s linear infinite 1.2s;
+}
+
+.spark.s4 {
+    animation: flyUp4 1.5s linear infinite 2.0s;
+}
+
+@keyframes flyUp1 {
+    0% {
+        transform: translateY(0) scale(1.2);
+        opacity: 0;
+    }
+
+    15% {
+        opacity: 0.9;
+    }
+
+    100% {
+        transform: translate(-5px, -25px) scale(0.1);
+        opacity: 0;
+    }
+}
+
+@keyframes flyUp2 {
+    0% {
+        transform: translateY(0) scale(1.2);
+        opacity: 0;
+    }
+
+    15% {
+        opacity: 0.9;
+    }
+
+    100% {
+        transform: translate(8px, -20px) scale(0.1);
+        opacity: 0;
+    }
+}
+
+@keyframes flyUp3 {
+    0% {
+        transform: translateY(0) scale(1.2);
+        opacity: 0;
+    }
+
+    15% {
+        opacity: 0.9;
+    }
+
+    100% {
+        transform: translate(2px, -30px) scale(0.1);
+        opacity: 0;
+    }
+}
+
+@keyframes flyUp4 {
+    0% {
+        transform: translateY(0) scale(1.2);
+        opacity: 0;
+    }
+
+    15% {
+        opacity: 0.9;
+    }
+
+    100% {
+        transform: translate(-8px, -22px) scale(0.1);
+        opacity: 0;
+    }
+}
+
+/* Drip animation (one blood drop falling occasionally) */
+.drip-drop {
+    opacity: 0;
+    animation: dripFall 6s cubic-bezier(0.55, 0.085, 0.68, 0.53) infinite;
+}
+
+@keyframes dripFall {
+
+    0%,
+    70% {
+        transform: translateY(0);
+        opacity: 0;
+    }
+
+    75% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    95% {
+        opacity: 1;
+        transform: translateY(8px) scaleY(1.2);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(12px) scaleY(0.5);
+    }
+}

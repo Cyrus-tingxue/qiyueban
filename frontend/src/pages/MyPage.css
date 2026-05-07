@@ -1,0 +1,195 @@
+.my-page {
+    padding: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.my-page-guest {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--color-text-secondary);
+}
+
+.my-page-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 25px;
+    border-bottom: 2px solid var(--color-bg-secondary);
+    padding-bottom: 10px;
+}
+
+.my-tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    font-size: 1.1rem;
+    font-family: var(--font-serif);
+    cursor: pointer;
+    padding: 5px 15px;
+    transition: all var(--transition-short);
+    position: relative;
+}
+
+.my-tab-btn:hover {
+    color: var(--color-text-main);
+}
+
+.my-tab-btn.active {
+    color: var(--color-accent-bright);
+    font-weight: bold;
+}
+
+.my-tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -12px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--color-accent);
+    border-radius: 2px;
+}
+
+.my-notif-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.my-notif-header h3 {
+    margin: 0;
+    color: var(--color-accent-bright);
+    font-family: var(--font-serif);
+}
+
+.read-all-btn {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--color-text-main);
+    padding: 6px 14px;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+}
+
+.read-all-btn:hover {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+}
+
+.my-notif-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.my-notif-item {
+    display: flex;
+    padding: 15px;
+    background: var(--card-bg);
+    border: 1px solid #1a1a1a;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    align-items: center;
+    position: relative;
+    transition: background-color var(--transition-short);
+}
+
+.my-notif-item:hover {
+    background: var(--color-bg-secondary);
+}
+
+.my-notif-item.read {
+    opacity: 0.6;
+}
+
+.my-notif-avatar {
+    margin-right: 15px;
+    overflow: visible;
+    /* 防止剪裁下垂的流苏或顶部红绳 */
+}
+
+.my-notif-body {
+    flex: 1;
+}
+
+.my-notif-body p {
+    margin: 0 0 5px 0;
+    font-size: 0.95rem;
+}
+
+.my-notif-sender {
+    font-weight: bold;
+    color: var(--color-accent);
+}
+
+.my-notif-time {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+}
+
+.my-notif-unread-badge {
+    color: #1a1a1a;
+    background: var(--color-accent);
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.my-loading-text,
+.my-empty-text {
+    text-align: center;
+    color: var(--color-text-secondary);
+    padding: 20px;
+}
+
+.my-account-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.my-account-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.my-account-field label {
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+}
+
+.my-account-field input {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    box-sizing: border-box;
+    color: var(--color-text-main);
+    padding: 10px 12px;
+    width: 100%;
+}
+
+.my-account-field input:focus {
+    border-color: var(--color-accent);
+    outline: none;
+}
+
+.my-account-submit {
+    align-self: flex-start;
+}
+
+.my-account-error,
+.my-account-success {
+    font-size: 0.85rem;
+}
+
+.my-account-error {
+    color: var(--color-accent-bright);
+}
+
+.my-account-success {
+    color: #68d391;
+}

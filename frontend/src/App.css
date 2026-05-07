@@ -1,0 +1,5 @@
+/* App-level styles */
+.main-content {
+  flex: 1;
+  position: relative;
+}

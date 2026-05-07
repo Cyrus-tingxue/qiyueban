@@ -1,0 +1,282 @@
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10, 14, 20, 0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--color-border-dim);
+}
+
+/* Logo — 横向 */
+.header-logo {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.header-logo-text {
+    font-family: 'Zhi Mang Xing', 'Ma Shan Zheng', 'Long Cang', 'STKaiti', 'KaiTi', var(--font-serif);
+    font-size: 2.8rem;
+    /* 再次放大 */
+    font-weight: 900;
+    /* 移除 italic 保持正体 */
+    color: var(--color-accent);
+    letter-spacing: 6px;
+    line-height: 1;
+    text-shadow:
+        0 0 10px var(--color-red-glow),
+        0 0 20px var(--color-accent),
+        0 0 40px rgba(196, 43, 43, 0.4);
+    user-select: none;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.header-logo-text:hover {
+    text-shadow: 0 0 30px var(--color-red-glow), 0 0 60px rgba(196, 43, 43, 0.3);
+}
+
+/* 搜索框 */
+.header-search {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    max-width: 400px;
+    margin: 0 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--color-border-dim);
+    border-radius: 24px;
+    padding: 0 4px 0 16px;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.header-search:focus-within {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 12px var(--color-red-glow);
+}
+
+.header-search input {
+    flex: 1;
+    padding: 8px 0;
+    font-size: 0.9rem;
+    color: var(--color-text-primary);
+    background: transparent;
+}
+
+.header-search input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.header-search-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: var(--color-text-secondary);
+    transition: color var(--transition-fast), background var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.header-search-btn:hover {
+    color: var(--color-accent);
+    background: rgba(196, 43, 43, 0.1);
+}
+
+/* 右侧区域 */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+/* 语言切换按钮 */
+.header-lang-btn {
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border-dim);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.header-lang-btn:hover {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    background: rgba(196, 43, 43, 0.1);
+}
+
+/* 搜索展开按钮（仅手机端显示） */
+.header-search-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: var(--color-text-secondary);
+    transition: color var(--transition-fast);
+}
+
+.header-search-toggle:hover {
+    color: var(--color-accent);
+}
+
+/* 用户名 badge */
+.header-user-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    color: #ff3333;
+    padding: 6px 12px;
+    border: none;
+    max-width: 250px;
+}
+
+.header-user-name,
+.header-user-uid {
+    font-size: 1.3rem;
+    font-weight: normal;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    line-height: 1.3;
+}
+
+.header-user-uid {
+    margin-top: 4px;
+}
+
+/* 管理员特效 */
+.header-user-admin {
+    background: linear-gradient(135deg, rgba(196, 43, 43, 0.1), rgba(139, 0, 0, 0.1));
+    border: 1px solid rgba(196, 43, 43, 0.4);
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header-user-admin::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(from 0deg,
+            transparent 0deg,
+            rgba(196, 43, 43, 0.18) 60deg,
+            transparent 120deg);
+    animation: adminRotate 4s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes adminRotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.header-user-admin .header-user-name,
+.header-user-admin .header-user-uid {
+    color: #ff3333;
+    text-shadow: 0 0 8px rgba(196, 43, 43, 0.7), 0 0 20px rgba(139, 0, 0, 0.4);
+    position: relative;
+    z-index: 1;
+}
+
+.header-admin-tag {
+    font-weight: bold;
+    background: linear-gradient(90deg, #ff3333, #c42b2b, #ff5555, #ff3333);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: adminShimmer 2s ease-in-out infinite;
+}
+
+@keyframes adminShimmer {
+    0% {
+        background-position: 0% center;
+    }
+
+    100% {
+        background-position: 200% center;
+    }
+}
+
+/* ===== 手机端适配 ===== */
+@media (max-width: 768px) {
+    .header {
+        padding: 8px 10px;
+    }
+
+    .header-logo-text {
+        font-size: 1.6rem;
+        letter-spacing: 2px;
+    }
+
+    .header-right {
+        gap: 6px;
+    }
+
+    /* 搜索框默认隐藏 */
+    .header-search {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        margin: 0;
+        max-width: none;
+        border-radius: 0;
+        border-top: none;
+        background: rgba(10, 14, 20, 0.96);
+        padding: 8px 12px;
+        transform: translateY(-100%);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.25s ease, opacity 0.25s ease;
+        z-index: 99;
+    }
+
+    .header-search.open {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* 搜索图标按钮可见 */
+    .header-search-toggle {
+        display: flex;
+        width: 32px;
+        height: 32px;
+    }
+
+    /* 用户名字和 UID 在手机端保持右侧并缩小 */
+    .header-user-badge {
+        font-size: 0.8rem;
+        max-width: 100px;
+        padding: 2px 4px;
+    }
+
+    .header-user-name,
+    .header-user-uid {
+        font-size: 0.85rem;
+    }
+}

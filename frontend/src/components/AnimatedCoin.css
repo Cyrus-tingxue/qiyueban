@@ -1,0 +1,39 @@
+.animated-coin-container {
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 悬挂的摆动支点设在顶部（绳结最上方） */
+    transform-origin: 50% -10%;
+    transition: all var(--transition-normal);
+}
+
+.animated-coin-container svg {
+    /* 强行忽略父容器宽高比的拉伸，保持内容原始比例 */
+    width: 100%;
+    height: 100%;
+    display: block;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6));
+    /* 让原先居中布局不要偏位过多 */
+    object-fit: contain;
+}
+
+.animated-coin-container:hover {
+    filter: drop-shadow(0 0 20px var(--color-red-glow));
+}
+
+/* 一直左右摇晃的悬挂效果 */
+.animated-coin-container.swinging {
+    animation: pendulumSwing 5s ease-in-out infinite alternate;
+}
+
+@keyframes pendulumSwing {
+    0% {
+        transform: rotate(-10deg);
+    }
+
+    100% {
+        transform: rotate(10deg);
+    }
+}

@@ -1,0 +1,30 @@
+.post-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: var(--spacing-md) var(--spacing-lg);
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.post-list-empty {
+    text-align: center;
+    padding: var(--spacing-xl) 0;
+    color: var(--color-text-muted);
+    font-size: 1rem;
+}
+
+.post-list-loading {
+    text-align: center;
+    padding: var(--spacing-xl) 0;
+    color: var(--color-accent);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@media (max-width: 768px) {
+    .post-list {
+        padding: var(--spacing-sm);
+        gap: 8px;
+    }
+}

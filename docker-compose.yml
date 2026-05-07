@@ -1,0 +1,47 @@
+services:
+  backend:
+    build: ./backend
+    container_name: touqi-backend
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=sqlite:///./data/touqi.db
+      - SECRET_KEY=${SECRET_KEY}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-240}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM=${SMTP_FROM}
+      - SMTP_USE_TLS=${SMTP_USE_TLS:-true}
+      - ANTHROPIC_AUTH_TOKEN=${ANTHROPIC_AUTH_TOKEN}
+      - ANTHROPIC_BASE_URL=${ANTHROPIC_BASE_URL}
+      - ANTHROPIC_MODEL=${ANTHROPIC_MODEL}
+    volumes:
+      - ./data:/app/data
+    expose:
+      - "80"
+
+  frontend:
+    build: 
+      context: ./frontend
+      target: build
+    container_name: touqi-frontend
+    # 构建完成后将静态文件复制到共享卷并退出
+    command: sh -c "mkdir -p /usr/share/nginx/html && cp -rf /app/dist/* /usr/share/nginx/html/"
+    volumes:
+      - frontend-dist:/usr/share/nginx/html
+
+  nginx:
+    image: nginx:alpine
+    container_name: touqi-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - frontend-dist:/usr/share/nginx/html:ro
+
+volumes:
+  frontend-dist:

@@ -1,0 +1,121 @@
+.announcement-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    backdrop-filter: blur(4px);
+}
+
+.announcement-modal {
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 24px;
+    width: 90%;
+    max-width: 400px;
+    color: #e0e0e0;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(255, 0, 0, 0.1);
+    animation: announcement-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes announcement-pop {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.announcement-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 28px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    transition: color 0.2s, transform 0.2s;
+}
+
+.announcement-close:hover {
+    color: #ff3333;
+    transform: scale(1.1);
+}
+
+.announcement-modal h2 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    font-size: 20px;
+    color: #ff3333;
+    text-align: center;
+    border-bottom: 1px solid #333;
+    padding-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.announcement-content {
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 24px;
+    text-align: justify;
+}
+
+.announcement-content p {
+    margin: 8px 0;
+}
+
+.announcement-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(145deg, #d32f2f, #b71c1c);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 10px rgba(211, 47, 47, 0.3);
+}
+
+.announcement-btn:hover {
+    background: linear-gradient(145deg, #f44336, #d32f2f);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(244, 67, 54, 0.4);
+}
+
+.announcement-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 5px rgba(211, 47, 47, 0.3);
+}
+
+.announcement-image-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.announcement-image {
+    max-width: 100%;
+    max-height: 250px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    object-fit: contain;
+}

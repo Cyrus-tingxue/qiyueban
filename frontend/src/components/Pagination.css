@@ -1,0 +1,44 @@
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg) 0;
+    margin-bottom: 80px;
+    /* 避开底部发帖等悬浮按钮的遮挡 */
+}
+
+.pagination-btn {
+    font-size: 1.6rem;
+    color: var(--color-accent);
+    font-weight: 700;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    transition: all var(--transition-fast);
+    user-select: none;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    color: var(--color-accent-bright);
+    transform: scale(1.2);
+    text-shadow: 0 0 10px var(--color-red-glow);
+}
+
+.pagination-btn:disabled {
+    color: var(--color-text-muted);
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    font-family: var(--font-sans);
+    font-size: 1.1rem;
+    color: var(--color-text-secondary);
+    letter-spacing: 4px;
+    user-select: none;
+}
+
+@media (max-width: 768px) {
+    .pagination {
+        margin-bottom: 120px;
+        /* 避开底部 Tab Bar 和发帖悬浮按钮 */
+    }
+}

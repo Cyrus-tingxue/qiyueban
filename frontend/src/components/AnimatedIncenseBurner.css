@@ -1,0 +1,152 @@
+.animated-avatar-container {
+    width: 90px;
+    height: 90px;
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-normal, 0.3s ease);
+}
+
+.animated-avatar-container:hover {
+    transform: scale(1.08);
+}
+
+.animated-avatar-container svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.avatar-static-group {
+    transform-origin: 50% 60%;
+}
+
+.avatar-static-group .smoke {
+    opacity: 0;
+}
+
+/* 动画组定义 */
+.incense-animated-group {
+    transform-origin: 50% 60%;
+    animation: burnerHover 4.5s ease-in-out infinite;
+}
+
+/* 烟雾上升动画 */
+.incense-animated-group .smoke {
+    opacity: 0;
+    stroke-dasharray: 70;
+    stroke-dashoffset: 70;
+}
+
+.incense-animated-group .smoke-1 {
+    animation: smokeFloatSinuous 4s ease-in-out infinite;
+    transform-origin: 38px 36px;
+}
+
+.incense-animated-group .smoke-2 {
+    animation: smokeFloatCenter 4.8s ease-in-out infinite 0.7s;
+    transform-origin: 50px 28px;
+}
+
+.incense-animated-group .smoke-3 {
+    animation: smokeFloatSinuous 4.2s ease-in-out infinite 1.4s;
+    transform-origin: 62px 36px;
+}
+
+@keyframes smokeFloatSinuous {
+    0% {
+        stroke-dashoffset: 70;
+        opacity: 0;
+        transform: translateY(0) scale(0.8) skewX(0deg);
+    }
+
+    15% {
+        opacity: 0.7;
+    }
+
+    40% {
+        opacity: 0.9;
+        transform: translateY(-8px) scale(1.05) skewX(3deg);
+    }
+
+    75% {
+        opacity: 0.5;
+        stroke-dashoffset: 0;
+        transform: translateY(-16px) scale(1.15) skewX(-2deg);
+    }
+
+    100% {
+        stroke-dashoffset: -20;
+        opacity: 0;
+        transform: translateY(-22px) scale(1.25) skewX(5deg);
+    }
+}
+
+@keyframes smokeFloatCenter {
+    0% {
+        stroke-dashoffset: 70;
+        opacity: 0;
+        transform: translateY(0) scale(0.9);
+    }
+
+    20% {
+        opacity: 0.8;
+    }
+
+    50% {
+        opacity: 0.95;
+        transform: translateY(-12px) scale(1.1) translateX(-1px);
+    }
+
+    85% {
+        opacity: 0.4;
+        stroke-dashoffset: 0;
+        transform: translateY(-24px) scale(1.3) translateX(2px);
+    }
+
+    100% {
+        stroke-dashoffset: -25;
+        opacity: 0;
+        transform: translateY(-30px) scale(1.4) translateX(-3px);
+    }
+}
+
+/* 香火闪烁呼吸动画 */
+.incense-animated-group .incense-glow {
+    animation: emberPulse 1.5s ease-in-out infinite alternate;
+}
+
+.incense-animated-group .center-glow {
+    animation: emberPulse 2s ease-in-out infinite alternate 0.5s;
+}
+
+@keyframes emberPulse {
+    0% {
+        opacity: 0.6;
+        transform: scale(0.8);
+    }
+
+    50% {
+        opacity: 0.85;
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}
+
+/* 炉身微微悬浮呼吸 */
+@keyframes burnerHover {
+
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+    }
+
+    50% {
+        transform: translateY(-1.5px) scale(1.015);
+    }
+}
