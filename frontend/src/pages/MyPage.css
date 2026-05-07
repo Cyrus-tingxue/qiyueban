@@ -193,3 +193,28 @@
 .my-account-success {
     color: #68d391;
 }
+
+.my-admin-section {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-color);
+}
+
+.my-admin-textarea {
+    min-height: 180px;
+    resize: vertical;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    box-sizing: border-box;
+    color: var(--color-text-main);
+    padding: 12px;
+    width: 100%;
+    font: inherit;
+    line-height: 1.6;
+}
+
+.my-admin-textarea:focus {
+    border-color: var(--color-accent);
+    outline: none;
+}

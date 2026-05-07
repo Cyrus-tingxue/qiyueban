@@ -6,7 +6,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from .config import CORS_ORIGINS
 from .database import init_db, SessionLocal
-from .routers import auth, posts, notifications, messages, uploads
+from .routers import announcement, auth, posts, notifications, messages, uploads
 from .services.post import init_categories
 import os
 
@@ -39,6 +39,7 @@ app.mount("/api/uploads", StaticFiles(directory="/app/data/uploads"), name="uplo
 
 # 路由
 app.include_router(auth.router, prefix="/api")
+app.include_router(announcement.router, prefix="/api")
 app.include_router(posts.router, prefix="/api")
 app.include_router(uploads.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")

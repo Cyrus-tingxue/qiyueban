@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { postService } from '../services/postService';
 import { authService } from '../services/authService';
+import { announcementService } from '../services/announcementService';
 import { useAuth } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LanguageContext';
 import AvatarIcon from '../components/AvatarIcon';
@@ -22,6 +23,11 @@ function MyPage() {
     const [emailError, setEmailError] = useState('');
     const [emailSuccess, setEmailSuccess] = useState('');
     const [emailLoading, setEmailLoading] = useState(false);
+    const [announcementDraft, setAnnouncementDraft] = useState('');
+    const [announcementLoading, setAnnouncementLoading] = useState(false);
+    const [announcementSaving, setAnnouncementSaving] = useState(false);
+    const [announcementError, setAnnouncementError] = useState('');
+    const [announcementSuccess, setAnnouncementSuccess] = useState('');
 
     const [notifications, setNotifications] = useState([]);
     const [notifLoading, setNotifLoading] = useState(false);
@@ -47,6 +53,13 @@ function MyPage() {
     useEffect(() => {
         setEmail(user?.email || '');
     }, [user?.email]);
+
+    useEffect(() => {
+        if (!isLoggedIn || !user?.is_admin || activeTab !== 'account') {
+            return;
+        }
+        loadAnnouncement();
+    }, [isLoggedIn, user?.is_admin, activeTab]);
 
     const loadNotifications = async () => {
         setNotifLoading(true);
@@ -123,6 +136,35 @@ function MyPage() {
             setEmailError(err.response?.data?.detail || t('emailBindFailed'));
         } finally {
             setEmailLoading(false);
+        }
+    };
+
+    const loadAnnouncement = async () => {
+        setAnnouncementLoading(true);
+        setAnnouncementError('');
+        try {
+            const data = await announcementService.getAnnouncement();
+            setAnnouncementDraft(data.content || '');
+        } catch (err) {
+            setAnnouncementError(err.response?.data?.detail || '公告加载失败');
+        } finally {
+            setAnnouncementLoading(false);
+        }
+    };
+
+    const handleAnnouncementSave = async (e) => {
+        e.preventDefault();
+        setAnnouncementSaving(true);
+        setAnnouncementError('');
+        setAnnouncementSuccess('');
+        try {
+            const data = await announcementService.updateAnnouncement(announcementDraft);
+            setAnnouncementDraft(data.content || '');
+            setAnnouncementSuccess('公告已更新');
+        } catch (err) {
+            setAnnouncementError(err.response?.data?.detail || '公告保存失败');
+        } finally {
+            setAnnouncementSaving(false);
         }
     };
 
@@ -265,6 +307,35 @@ function MyPage() {
                                 {emailLoading ? t('submitting') : (emailCodeSent ? t('confirmBindEmail') : t('sendVerificationCode'))}
                             </button>
                         </form>
+
+                        {user?.is_admin && (
+                            <div className="my-admin-section">
+                                <div className="my-notif-header">
+                                    <h3>公告管理</h3>
+                                </div>
+                                <form className="my-account-form" onSubmit={handleAnnouncementSave}>
+                                    <div className="my-account-field">
+                                        <label>论坛公告内容</label>
+                                        <textarea
+                                            className="my-admin-textarea"
+                                            value={announcementDraft}
+                                            onChange={(e) => setAnnouncementDraft(e.target.value)}
+                                            placeholder="请输入论坛公告内容"
+                                            disabled={announcementLoading || announcementSaving}
+                                        />
+                                    </div>
+                                    {announcementError && <div className="my-account-error">{announcementError}</div>}
+                                    {announcementSuccess && <div className="my-account-success">{announcementSuccess}</div>}
+                                    <button
+                                        className="read-all-btn my-account-submit"
+                                        type="submit"
+                                        disabled={announcementLoading || announcementSaving}
+                                    >
+                                        {announcementLoading ? '加载中...' : (announcementSaving ? '保存中...' : '保存公告')}
+                                    </button>
+                                </form>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

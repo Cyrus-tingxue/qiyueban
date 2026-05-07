@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { authService } from '../services/authService';
 
 const AuthContext = createContext(null);
 
@@ -16,6 +17,35 @@ export function AuthProvider({ children }) {
         return null;
     });
     const [token, setToken] = useState(localStorage.getItem('token'));
+
+    useEffect(() => {
+        if (!token) {
+            return;
+        }
+
+        let active = true;
+
+        const refreshProfile = async () => {
+            try {
+                const profile = await authService.getProfile();
+                if (!active) return;
+                setUser(profile);
+                localStorage.setItem('user', JSON.stringify(profile));
+            } catch {
+                if (!active) return;
+                setUser(null);
+                setToken(null);
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+            }
+        };
+
+        refreshProfile();
+
+        return () => {
+            active = false;
+        };
+    }, [token]);
 
     const login = (userData, tokenStr) => {
         setUser(userData);

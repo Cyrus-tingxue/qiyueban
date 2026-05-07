@@ -1,38 +1,40 @@
 .announcement-modal-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: rgba(0, 0, 0, 0.75);
+    inset: 0;
+    background:
+        radial-gradient(circle at top, rgba(170, 24, 24, 0.18), transparent 38%),
+        rgba(0, 0, 0, 0.78);
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 20px;
     z-index: 9999;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(6px);
 }
 
 .announcement-modal {
-    background-color: #1a1a1a;
-    border: 1px solid #333;
-    border-radius: 12px;
-    padding: 24px;
-    width: 90%;
-    max-width: 400px;
-    color: #e0e0e0;
+    background:
+        linear-gradient(180deg, rgba(44, 16, 16, 0.96), rgba(24, 24, 24, 0.98));
+    border: 1px solid rgba(255, 70, 70, 0.18);
+    border-radius: 22px;
+    padding: 30px 24px 24px;
+    width: min(100%, 520px);
+    color: #f2eaea;
     position: relative;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(255, 0, 0, 0.1);
-    animation: announcement-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    animation: announcement-pop 0.35s ease-out;
 }
 
 @keyframes announcement-pop {
     0% {
-        transform: scale(0.8);
+        transform: translateY(12px) scale(0.96);
         opacity: 0;
     }
 
     100% {
-        transform: scale(1);
+        transform: translateY(0) scale(1);
         opacity: 1;
     }
 }
@@ -40,82 +42,136 @@
 .announcement-close {
     position: absolute;
     top: 12px;
-    right: 12px;
-    background: none;
+    right: 14px;
+    background: transparent;
     border: none;
-    color: #888;
-    font-size: 28px;
-    cursor: pointer;
+    color: #9d8f8f;
+    font-size: 42px;
     line-height: 1;
+    cursor: pointer;
     padding: 0;
     transition: color 0.2s, transform 0.2s;
 }
 
 .announcement-close:hover {
-    color: #ff3333;
-    transform: scale(1.1);
+    color: #ff6b6b;
+    transform: scale(1.04);
 }
 
 .announcement-modal h2 {
-    margin-top: 0;
-    margin-bottom: 16px;
-    font-size: 20px;
-    color: #ff3333;
+    margin: 0 0 22px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    color: #ff3d3d;
     text-align: center;
-    border-bottom: 1px solid #333;
-    padding-bottom: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+    font-family: var(--font-serif);
+    font-size: 2rem;
+    letter-spacing: 0.06em;
 }
 
 .announcement-content {
-    font-size: 15px;
-    line-height: 1.6;
-    margin-bottom: 24px;
-    text-align: justify;
+    margin-bottom: 20px;
 }
 
-.announcement-content p {
-    margin: 8px 0;
+.announcement-panel {
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 18px;
+    padding: 24px 20px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.announcement-text {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: #f4eeee;
+    font-size: 1.5rem;
+    line-height: 1.75;
+    font-weight: 600;
+    text-align: left;
+}
+
+.announcement-loading {
+    color: #d6c7c7;
+}
+
+.announcement-error {
+    margin: 14px 4px 0;
+    color: #ff9c9c;
+    font-size: 1rem;
+    white-space: pre-wrap;
+}
+
+.announcement-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 18px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    color: #dfd6d6;
+    font-size: 1.05rem;
+    line-height: 1.5;
+    cursor: pointer;
+}
+
+.announcement-checkbox input {
+    margin-top: 3px;
+    accent-color: #d32f2f;
+    cursor: pointer;
+    transform: scale(1.15);
 }
 
 .announcement-btn {
     width: 100%;
-    padding: 12px;
-    background: linear-gradient(145deg, #d32f2f, #b71c1c);
-    color: white;
+    padding: 15px 18px;
+    background: linear-gradient(180deg, #e03131, #b81f1f);
+    color: #fff;
     border: none;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: bold;
+    border-radius: 14px;
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
     cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 4px 10px rgba(211, 47, 47, 0.3);
+    transition: transform 0.18s, box-shadow 0.18s, filter 0.18s;
+    box-shadow: 0 14px 30px rgba(184, 31, 31, 0.28);
 }
 
 .announcement-btn:hover {
-    background: linear-gradient(145deg, #f44336, #d32f2f);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(244, 67, 54, 0.4);
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+    box-shadow: 0 18px 36px rgba(184, 31, 31, 0.36);
 }
 
 .announcement-btn:active {
     transform: translateY(0);
-    box-shadow: 0 2px 5px rgba(211, 47, 47, 0.3);
 }
 
-.announcement-image-container {
-    display: flex;
-    justify-content: center;
-    margin-top: 15px;
-}
+@media (max-width: 640px) {
+    .announcement-modal {
+        padding: 26px 18px 18px;
+        border-radius: 18px;
+    }
 
-.announcement-image {
-    max-width: 100%;
-    max-height: 250px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-    object-fit: contain;
+    .announcement-modal h2 {
+        font-size: 1.7rem;
+    }
+
+    .announcement-panel {
+        padding: 20px 16px;
+    }
+
+    .announcement-text {
+        font-size: 1.28rem;
+    }
+
+    .announcement-checkbox {
+        font-size: 0.98rem;
+    }
+
+    .announcement-btn {
+        font-size: 1.25rem;
+    }
 }
