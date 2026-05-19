@@ -2,7 +2,7 @@ import math
 from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
-from sqlalchemy import case, func, or_
+from sqlalchemy import Integer, case, cast, func, or_
 from ..models.post import Post, Category, Reply, Like, ReplyLike
 from ..models.user import User
 
@@ -32,8 +32,8 @@ def get_posts(db: Session, page: int = 1, page_size: int = 10, category: str = N
 
         # 精品页优先展示“当月高赞”内容，再给一点轻微随机扰动，避免顺序过于僵硬。
         month_priority = case((Post.created_at >= month_start, 1), else_=0)
-        random_bonus = func.abs(func.random()) % 7
-        featured_score = (Post.like_count * 100) + random_bonus
+        random_bonus = cast(func.floor(func.random() * 7), Integer)
+        featured_score = (func.coalesce(Post.like_count, 0) * 100) + random_bonus
 
         query = query.order_by(
             month_priority.desc(),
