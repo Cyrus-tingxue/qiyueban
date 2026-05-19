@@ -12,6 +12,8 @@ class Message(Base):
     content = Column(String(2000), nullable=False)
     is_read = Column(Boolean, default=False, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    sender_deleted_at = Column(DateTime, nullable=True, index=True)
+    receiver_deleted_at = Column(DateTime, nullable=True, index=True)
 
     sender = relationship("User", foreign_keys=[sender_id])
     receiver = relationship("User", foreign_keys=[receiver_id])

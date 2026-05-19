@@ -20,3 +20,4 @@ class User(Base):
     avatar = Column(String(255), default="")
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    last_seen_at = Column(DateTime, nullable=True)

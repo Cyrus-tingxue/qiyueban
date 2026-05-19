@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { postService } from '../services/postService';
+import { messageService } from '../services/messageService';
 import { useAuth } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LanguageContext';
 import AvatarIcon from '../components/AvatarIcon';
@@ -30,6 +31,8 @@ function PostDetailPage() {
     const [submitting, setSubmitting] = useState(false);
     const [uploadingReplyImage, setUploadingReplyImage] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
+    const [friendshipStatus, setFriendshipStatus] = useState('none');
+    const [messageActionLoading, setMessageActionLoading] = useState(false);
     const textareaRef = useRef(null);
     const replyFileInputRef = useRef(null);
 
@@ -37,6 +40,43 @@ function PostDetailPage() {
         loadPost();
         loadReplies();
     }, [id, isLoggedIn]);
+
+    useEffect(() => {
+        if (!isLoggedIn || !user?.uid || !post?.author_id || user.uid === post.author_id) {
+            setFriendshipStatus('none');
+            return;
+        }
+
+        const loadFriendshipStatus = async () => {
+            try {
+                const [friends, requests] = await Promise.all([
+                    messageService.getFriends(),
+                    messageService.getFriendRequests(),
+                ]);
+
+                if (friends.some((item) => item.friend.uid === post.author_id)) {
+                    setFriendshipStatus('friend');
+                    return;
+                }
+
+                const relatedRequest = requests.find((item) => {
+                    const other = item.direction === 'incoming' ? item.requester : item.addressee;
+                    return other.uid === post.author_id;
+                });
+
+                if (!relatedRequest) {
+                    setFriendshipStatus('none');
+                    return;
+                }
+
+                setFriendshipStatus(relatedRequest.direction === 'incoming' ? 'incoming' : 'outgoing');
+            } catch (e) {
+                setFriendshipStatus('none');
+            }
+        };
+
+        loadFriendshipStatus();
+    }, [isLoggedIn, user?.uid, post?.author_id]);
 
     const loadPost = async () => {
         setLoading(true);
@@ -233,6 +273,40 @@ function PostDetailPage() {
         }
     };
 
+    const handleMessageAction = async () => {
+        if (!isLoggedIn || !post?.author_id || !user || user.uid === post.author_id) {
+            return;
+        }
+
+        if (friendshipStatus === 'friend') {
+            navigate(`/chat/private/${post.author_id}`);
+            return;
+        }
+
+        if (friendshipStatus === 'incoming') {
+            navigate('/messages');
+            return;
+        }
+
+        setMessageActionLoading(true);
+        try {
+            await messageService.sendFriendRequest(post.author_id);
+            setFriendshipStatus('outgoing');
+        } catch (e) {
+            alert(e.response?.data?.detail || t('operationFailed'));
+        } finally {
+            setMessageActionLoading(false);
+        }
+    };
+
+    const getMessageActionLabel = () => {
+        if (messageActionLoading) return '处理中...';
+        if (friendshipStatus === 'friend') return t('sendMessage');
+        if (friendshipStatus === 'incoming') return '去处理';
+        if (friendshipStatus === 'outgoing') return '已申请';
+        return '加好友';
+    };
+
     if (loading) {
         return <div className="post-detail-page"><p style={{ color: 'var(--color-accent)', animation: 'pulse 1.5s infinite' }}>{t('loading')}</p></div>;
     }
@@ -260,10 +334,11 @@ function PostDetailPage() {
                         {isLoggedIn && user && user?.uid !== post.author_id && (
                             <button
                                 className="send-message-btn"
-                                onClick={() => navigate(`/chat/${post.author_id}`)}
-                                title={t('sendMessage')}
+                                onClick={handleMessageAction}
+                                title={getMessageActionLabel()}
+                                disabled={messageActionLoading}
                             >
-                                {t('sendMessage')}
+                                {getMessageActionLabel()}
                             </button>
                         )}
                     </span>

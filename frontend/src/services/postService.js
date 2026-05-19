@@ -1,7 +1,7 @@
 import api from './api';
 
 export const postService = {
-    async getPosts(page = 1, pageSize = 10, category = null, sort = "newest", search = null, authorId = null) {
+    async getPosts(page = 1, pageSize = 10, category = null, sort = 'newest', search = null, authorId = null) {
         const params = { page, page_size: pageSize, sort };
         if (category) params.category = category;
         if (search) params.search = search;
@@ -24,7 +24,7 @@ export const postService = {
         const formData = new FormData();
         formData.append('file', file);
         const response = await api.post('/upload/image', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
+            headers: { 'Content-Type': 'multipart/form-data' },
         });
         return response.data;
     },
@@ -76,14 +76,17 @@ export const postService = {
 
     async getLikedReplies(postId) {
         const response = await api.get(`/posts/${postId}/replies/liked`);
-        return response.data; // 返回的是一个 list[int]
+        return response.data;
     },
 
-    // ===== 通知相关 =====
     async getNotifications(page = 1, pageSize = 20) {
-        // 后端是用 skip, limit
         const skip = (page - 1) * pageSize;
         const response = await api.get('/notifications', { params: { skip, limit: pageSize } });
+        return response.data;
+    },
+
+    async getUnreadNotificationsCount() {
+        const response = await api.get('/notifications/unread/count');
         return response.data;
     },
 
@@ -95,5 +98,10 @@ export const postService = {
     async readAllNotifications() {
         const response = await api.post('/notifications/read-all');
         return response.data;
-    }
+    },
+
+    async clearAllNotifications() {
+        const response = await api.delete('/notifications/clear-all');
+        return response.data;
+    },
 };

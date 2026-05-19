@@ -98,6 +98,20 @@ function MyPage() {
         }
     };
 
+    const handleClearAll = async () => {
+        if (!window.confirm('确定要清空所有消息吗？此操作不可恢复。')) {
+            return;
+        }
+        try {
+            setNotifications([]);
+            window.dispatchEvent(new CustomEvent('notificationRead', { detail: { action: 'readAll' } }));
+            await postService.clearAllNotifications();
+        } catch (e) {
+            alert(t('operationFailed'));
+            loadNotifications();
+        }
+    };
+
     const handleNotificationClick = async (notif) => {
         if (!notif.is_read) {
             try {
@@ -106,6 +120,10 @@ function MyPage() {
 
                 await postService.readNotification(notif.id);
             } catch (e) { }
+        }
+        if (notif.type === 'friend_request') {
+            navigate('/messages');
+            return;
         }
         if (notif.post_id) {
             navigate(`/post/${notif.post_id}`);
@@ -208,7 +226,10 @@ function MyPage() {
                     <div className="my-notif-section">
                         <div className="my-notif-header">
                             <h3>{t('notifList')}</h3>
-                            <button className="read-all-btn" onClick={handleReadAll}>{t('markAllRead')}</button>
+                            <div className="my-notif-actions">
+                                <button className="read-all-btn" onClick={handleReadAll}>{t('markAllRead')}</button>
+                                <button className="read-all-btn danger" onClick={handleClearAll}>全部清除</button>
+                            </div>
                         </div>
                         {notifLoading ? (
                             <p className="my-loading-text">{t('loading')}</p>
@@ -228,7 +249,13 @@ function MyPage() {
                                         <div className="my-notif-body">
                                             <p>
                                                 <span className="my-notif-sender">{notif.sender_name || t('someone')}</span>
-                                                {notif.type === 'reply' ? t('repliedYou') : t('mentionedYou')}
+                                                {notif.type === 'friend_request'
+                                                    ? ' 申请添加你为好友'
+                                                    : notif.type === 'reply_mention'
+                                                        ? ' 回复并提到了你'
+                                                        : notif.type === 'reply'
+                                                            ? t('repliedYou')
+                                                            : t('mentionedYou')}
                                             </p>
                                             <span className="my-notif-time">{notif.created_at}</span>
                                         </div>

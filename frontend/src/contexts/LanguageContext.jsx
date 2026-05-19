@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useCallback, useContext, useState } from 'react';
 import zh from '../i18n/zh';
 import en from '../i18n/en';
 
@@ -12,7 +12,7 @@ export function LanguageProvider({ children }) {
     });
 
     const toggleLang = useCallback(() => {
-        setLang(prev => {
+        setLang((prev) => {
             const next = prev === 'zh' ? 'en' : 'zh';
             localStorage.setItem('lang', next);
             return next;
@@ -20,7 +20,7 @@ export function LanguageProvider({ children }) {
     }, []);
 
     const t = useCallback((key) => {
-        return translations[lang]?.[key] || translations.zh[key] || key;
+        return translations[lang]?.[key] || translations.en[key] || translations.zh[key] || key;
     }, [lang]);
 
     return (

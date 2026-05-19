@@ -1,6 +1,8 @@
 import math
+from datetime import datetime, timezone
+
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, or_
+from sqlalchemy import case, func, or_
 from ..models.post import Post, Category, Reply, Like, ReplyLike
 from ..models.user import User
 
@@ -25,7 +27,19 @@ def get_posts(db: Session, page: int = 1, page_size: int = 10, category: str = N
     total_pages = max(1, math.ceil(total / page_size))
     
     if sort == "likes":
-        query = query.order_by(Post.like_count.desc(), Post.created_at.desc())
+        now = datetime.now(timezone.utc)
+        month_start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+
+        # 精品页优先展示“当月高赞”内容，再给一点轻微随机扰动，避免顺序过于僵硬。
+        month_priority = case((Post.created_at >= month_start, 1), else_=0)
+        random_bonus = func.abs(func.random()) % 7
+        featured_score = (Post.like_count * 100) + random_bonus
+
+        query = query.order_by(
+            month_priority.desc(),
+            featured_score.desc(),
+            Post.created_at.desc(),
+        )
     else:
         query = query.order_by(Post.created_at.desc())
 
@@ -192,38 +206,33 @@ def create_reply(
     # 查找并派发 @ 提及通知（使用一个集合去重并剔除自己）
     mention_pattern = re.compile(r'@([\w\u4e00-\u9fa5]+)')
     mentioned_names = set(mention_pattern.findall(content))
+    mention_user_ids = set()
     if mentioned_names:
         users = db.query(User).filter(User.username.in_(list(mentioned_names))).all()
-        for u in users:
-            if u.id != author_id:
-                notif = Notification(
-                    receiver_id=u.id,
-                    sender_id=author_id,
-                    sender_name=author_name,
-                    # sender_avatar 在获取列表时再关联或在前端根据 sender_name 读取，此处不硬存
-                    type='mention',
-                    target_id=reply.id,
-                    post_id=post_id
-                )
-                db.add(notif)
-    
-    # 派发普通回复通知 (如果不属于@里面且被回复者不是自己)
+        mention_user_ids = {u.id for u in users if u.id != author_id}
+
     notified_receiver_id = None
     if reply_to_user_id and reply_to_user_id != author_id:
         notified_receiver_id = reply_to_user_id
     elif not reply_to_user_id and post and post.author_id != author_id:
-        # 如果是直接回复主帖
         notified_receiver_id = post.author_id
-        
+
+    receivers = {}
+    for uid in mention_user_ids:
+        receivers[uid] = 'mention'
+
     if notified_receiver_id:
-        # 防止刚刚 mention 里已经发过一次通知，造成双重提醒
-        # 如果此人刚好也被 @ 了，那只发 mention 通知就行，或者二选一均可
-        # 这里保险起见直接补发一个 reply 类型的通知
+        if notified_receiver_id in receivers:
+            receivers[notified_receiver_id] = 'reply_mention'
+        else:
+            receivers[notified_receiver_id] = 'reply'
+
+    for receiver_id, notif_type in receivers.items():
         notif = Notification(
-            receiver_id=notified_receiver_id,
+            receiver_id=receiver_id,
             sender_id=author_id,
             sender_name=author_name,
-            type='reply',
+            type=notif_type,
             target_id=reply.id,
             post_id=post_id
         )

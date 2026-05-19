@@ -27,7 +27,6 @@ function GlobalSoundEffects() {
         playSound('click');
       }
     };
-
     document.addEventListener('click', handleGlobalClick, true);
 
     return () => {
@@ -59,6 +58,8 @@ function App() {
                   <Route path="create-post" element={<CreatePostPage />} />
                   <Route path="messages" element={<MessagesPage />} />
                   <Route path="chat/:userId" element={<ChatPage />} />
+                  <Route path="chat/private/:userId" element={<ChatPage />} />
+                  <Route path="chat/group/:groupId" element={<ChatPage />} />
                   <Route path="login" element={<LoginPage />} />
                   <Route path="reset-password" element={<ResetPasswordPage />} />
                 </Route>

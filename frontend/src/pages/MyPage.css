@@ -58,6 +58,12 @@
     margin-bottom: 15px;
 }
 
+.my-notif-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .my-notif-header h3 {
     margin: 0;
     color: var(--color-accent-bright);
@@ -76,6 +82,11 @@
 .read-all-btn:hover {
     background: var(--color-accent);
     border-color: var(--color-accent);
+}
+
+.read-all-btn.danger:hover {
+    background: #8b1a1a;
+    border-color: #8b1a1a;
 }
 
 .my-notif-list {

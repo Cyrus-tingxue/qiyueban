@@ -63,6 +63,7 @@ def init_db():
         "ALTER TABLE users ADD COLUMN email_verification_expires_at DATETIME",
         "ALTER TABLE users ADD COLUMN password_reset_token_hash VARCHAR(128)",
         "ALTER TABLE users ADD COLUMN password_reset_expires_at DATETIME",
+        "ALTER TABLE users ADD COLUMN last_seen_at DATETIME",
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users(email)",
     ):
         try:
@@ -82,5 +83,45 @@ def init_db():
             conn.execute(text("ALTER TABLE replies ADD COLUMN image_url VARCHAR(500)"))
     except Exception:
         pass
+
+    for statement in (
+        "ALTER TABLE messages ADD COLUMN sender_deleted_at DATETIME",
+        "ALTER TABLE messages ADD COLUMN receiver_deleted_at DATETIME",
+        "CREATE INDEX IF NOT EXISTS ix_messages_sender_deleted_at ON messages(sender_deleted_at)",
+        "CREATE INDEX IF NOT EXISTS ix_messages_receiver_deleted_at ON messages(receiver_deleted_at)",
+    ):
+        try:
+            with engine.begin() as conn:
+                conn.execute(text(statement))
+        except Exception:
+            pass
+
+    for statement in (
+        "ALTER TABLE chat_group_members ADD COLUMN last_read_message_id INTEGER REFERENCES group_messages(id)",
+        """
+        UPDATE chat_group_members
+        SET last_read_message_id = (
+            SELECT MAX(group_messages.id)
+            FROM group_messages
+            WHERE group_messages.group_id = chat_group_members.group_id
+        )
+        WHERE last_read_message_id IS NULL
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_chat_group_members_last_read_message_id ON chat_group_members(last_read_message_id)",
+    ):
+        try:
+            with engine.begin() as conn:
+                conn.execute(text(statement))
+        except Exception:
+            pass
+
+    for statement in (
+        "CREATE INDEX IF NOT EXISTS ix_notifications_type_target_receiver ON notifications(type, target_id, receiver_id)",
+    ):
+        try:
+            with engine.begin() as conn:
+                conn.execute(text(statement))
+        except Exception:
+            pass
 
     Base.metadata.create_all(bind=engine)

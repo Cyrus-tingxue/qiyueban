@@ -21,10 +21,13 @@
     width: min(100%, 520px);
     color: #f2eaea;
     position: relative;
+    max-height: min(88vh, 760px);
     box-shadow:
         0 24px 60px rgba(0, 0, 0, 0.55),
         inset 0 1px 0 rgba(255, 255, 255, 0.03);
     animation: announcement-pop 0.35s ease-out;
+    display: flex;
+    flex-direction: column;
 }
 
 @keyframes announcement-pop {
@@ -71,6 +74,7 @@
 
 .announcement-content {
     margin-bottom: 20px;
+    overflow-y: auto;
 }
 
 .announcement-panel {
@@ -86,8 +90,8 @@
     white-space: pre-wrap;
     word-break: break-word;
     color: #f4eeee;
-    font-size: 1.5rem;
-    line-height: 1.75;
+    font-size: 1.34rem;
+    line-height: 1.68;
     font-weight: 600;
     text-align: left;
 }
@@ -153,25 +157,29 @@
     .announcement-modal {
         padding: 26px 18px 18px;
         border-radius: 18px;
+        max-height: 86vh;
     }
 
     .announcement-modal h2 {
-        font-size: 1.7rem;
+        font-size: 1.5rem;
     }
 
     .announcement-panel {
-        padding: 20px 16px;
+        padding: 18px 14px;
     }
 
     .announcement-text {
-        font-size: 1.28rem;
+        font-size: 1.08rem;
+        line-height: 1.58;
     }
 
     .announcement-checkbox {
-        font-size: 0.98rem;
+        font-size: 0.92rem;
+        margin-bottom: 14px;
     }
 
     .announcement-btn {
-        font-size: 1.25rem;
+        font-size: 1.08rem;
+        padding: 13px 16px;
     }
 }
