@@ -156,6 +156,8 @@ def apply_postgres_column_expansions(target_engine):
         'ALTER TABLE replies ALTER COLUMN author_name TYPE VARCHAR(255)',
         'ALTER TABLE replies ALTER COLUMN reply_to_username TYPE VARCHAR(255)',
         'ALTER TABLE notifications ALTER COLUMN sender_name TYPE VARCHAR(255)',
+        'ALTER TABLE messages ALTER COLUMN content TYPE TEXT',
+        'ALTER TABLE group_messages ALTER COLUMN content TYPE TEXT',
     )
     for statement in statements:
         try:

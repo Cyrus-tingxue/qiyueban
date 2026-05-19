@@ -52,7 +52,7 @@ docker compose build backend
 
 echo
 echo "Checking whether PostgreSQL already contains user data..."
-USER_COUNT="$(docker compose run --rm backend python -c "from sqlalchemy import create_engine, text; import os; engine = create_engine(os.environ['DATABASE_URL']); conn = engine.connect(); value = conn.execute(text(\"SELECT COUNT(*) FROM users\")).scalar(); conn.close(); print(value)" 2>/dev/null || true)"
+USER_COUNT="$(docker compose run --rm backend python -c "from sqlalchemy import create_engine, inspect, text; import os; engine = create_engine(os.environ['DATABASE_URL']); inspector = inspect(engine); conn = engine.connect(); value = conn.execute(text(\"SELECT COUNT(*) FROM users\")).scalar() if inspector.has_table('users') else 0; conn.close(); print(value)" 2>/dev/null || true)"
 if [ -z "$USER_COUNT" ]; then
   echo "[ERROR] Could not connect to PostgreSQL or query the users table."
   exit 1
