@@ -12,8 +12,16 @@ import { postService } from '../services/postService';
 import { isGroupMuted, setGroupMuted } from '../utils/groupMute';
 import './ChatPage.css';
 
-const PRIVATE_POLL_INTERVAL_MS = 1500;
-const GROUP_POLL_INTERVAL_MS = 800;
+const PRIVATE_POLL_INTERVAL_MS = 3000;
+const GROUP_POLL_INTERVAL_MS = 2000;
+const PRIVATE_INITIAL_BATCH = 30;
+const GROUP_INITIAL_BATCH = 40;
+const PRIVATE_HISTORY_BATCH = 30;
+const GROUP_HISTORY_BATCH = 40;
+const PRIVATE_SYNC_BATCH = 40;
+const GROUP_SYNC_BATCH = 60;
+const AUTO_SCROLL_THRESHOLD_PX = 120;
+const HISTORY_LOAD_THRESHOLD_PX = 80;
 
 const ChatPage = () => {
     const { userId: privateUserIdParam, groupId: groupIdParam } = useParams();
@@ -24,16 +32,23 @@ const ChatPage = () => {
     const { user } = useAuth();
     const { t } = useLang();
     const navigate = useNavigate();
+    const messageListRef = useRef(null);
     const messagesEndRef = useRef(null);
     const composerRef = useRef(null);
     const imageInputRef = useRef(null);
     const previousMessageSignatureRef = useRef('');
+    const shouldAutoScrollRef = useRef(true);
+    const otherUserRef = useRef(null);
+    const messagesRef = useRef([]);
+    const loadingHistoryRef = useRef(false);
 
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
+    const [loadingMoreHistory, setLoadingMoreHistory] = useState(false);
+    const [hasMoreHistory, setHasMoreHistory] = useState(true);
     const [otherUser, setOtherUser] = useState(null);
     const [groupDetail, setGroupDetail] = useState(null);
     const [inviteQuery, setInviteQuery] = useState('');
@@ -43,17 +58,150 @@ const ChatPage = () => {
     const [memberPanelOpen, setMemberPanelOpen] = useState(false);
     const [groupMuted, setGroupMutedState] = useState(() => (groupId ? isGroupMuted(groupId) : false));
 
+    const initialBatchSize = isGroupChat ? GROUP_INITIAL_BATCH : PRIVATE_INITIAL_BATCH;
+    const historyBatchSize = isGroupChat ? GROUP_HISTORY_BATCH : PRIVATE_HISTORY_BATCH;
+    const syncBatchSize = isGroupChat ? GROUP_SYNC_BATCH : PRIVATE_SYNC_BATCH;
+
+    useEffect(() => {
+        otherUserRef.current = otherUser;
+    }, [otherUser]);
+
     const buildMessageSignature = (items) =>
         items.map((item) => `${item.id}:${item.created_at}:${item.content}`).join('|');
+
+    const commitMessages = (nextMessages) => {
+        previousMessageSignatureRef.current = buildMessageSignature(nextMessages);
+        messagesRef.current = nextMessages;
+        setMessages(nextMessages);
+    };
 
     const replaceMessagesIfChanged = (nextMessages) => {
         const nextSignature = buildMessageSignature(nextMessages);
         if (nextSignature === previousMessageSignatureRef.current) {
             return false;
         }
-        previousMessageSignatureRef.current = nextSignature;
-        setMessages(nextMessages);
+
+        commitMessages(nextMessages);
         return true;
+    };
+
+    const mergeRecentMessagesIfChanged = (incomingMessages) => {
+        const mergedMap = new Map(messagesRef.current.map((item) => [item.id, item]));
+        incomingMessages.forEach((item) => {
+            mergedMap.set(item.id, item);
+        });
+
+        const mergedMessages = Array.from(mergedMap.values()).sort((a, b) => a.id - b.id);
+        return replaceMessagesIfChanged(mergedMessages);
+    };
+
+    const isNearBottom = () => {
+        const container = messageListRef.current;
+        if (!container) {
+            return true;
+        }
+
+        const distanceToBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+        return distanceToBottom <= AUTO_SCROLL_THRESHOLD_PX;
+    };
+
+    const loadRecentMessages = async ({ initial = false, refreshMeta = false } = {}) => {
+        shouldAutoScrollRef.current = initial || isNearBottom();
+
+        if (isGroupChat) {
+            const requests = [messageService.getGroupMessages(groupId, 0, initial ? initialBatchSize : syncBatchSize)];
+            if (initial || refreshMeta) {
+                requests.push(messageService.getGroupDetail(groupId));
+            }
+
+            const [groupMessages, detail] = await Promise.all(requests);
+            if (detail) {
+                setGroupDetail(detail);
+            }
+
+            if (initial) {
+                replaceMessagesIfChanged(groupMessages);
+                setHasMoreHistory(groupMessages.length >= initialBatchSize);
+                window.dispatchEvent(new CustomEvent('messageUnreadStateChanged', { detail: { type: 'group-read' } }));
+                return;
+            }
+
+            const didChange = mergeRecentMessagesIfChanged(groupMessages);
+            if (didChange) {
+                window.dispatchEvent(new CustomEvent('messageUnreadStateChanged', { detail: { type: 'group-read' } }));
+            }
+            return;
+        }
+
+        const requests = [messageService.getMessages(privateUserId, 0, initial ? initialBatchSize : syncBatchSize)];
+        if (initial || refreshMeta || !otherUserRef.current) {
+            requests.push(messageService.getFriends());
+        }
+
+        const [privateMessages, friendList] = await Promise.all(requests);
+        const matchedFriend = friendList?.find((item) => item.friend.uid === privateUserId);
+        if ((initial || refreshMeta || !otherUserRef.current) && !matchedFriend) {
+            alert('请先加好友再私信');
+            navigate('/messages');
+            return;
+        }
+
+        if (initial) {
+            replaceMessagesIfChanged(privateMessages);
+            setHasMoreHistory(privateMessages.length >= initialBatchSize);
+        } else {
+            mergeRecentMessagesIfChanged(privateMessages);
+        }
+
+        if (matchedFriend || privateMessages.length > 0) {
+            const latestMessage = privateMessages[privateMessages.length - 1];
+            setOtherUser(
+                latestMessage
+                    ? (latestMessage.sender_id === privateUserId ? latestMessage.sender : latestMessage.receiver)
+                    : matchedFriend.friend
+            );
+        }
+    };
+
+    const loadOlderMessages = async () => {
+        if (loadingHistoryRef.current || !hasMoreHistory) {
+            return;
+        }
+
+        const container = messageListRef.current;
+        const previousHeight = container?.scrollHeight || 0;
+        const previousTop = container?.scrollTop || 0;
+        const currentCount = messagesRef.current.length;
+
+        loadingHistoryRef.current = true;
+        setLoadingMoreHistory(true);
+
+        try {
+            const olderMessages = isGroupChat
+                ? await messageService.getGroupMessages(groupId, currentCount, historyBatchSize)
+                : await messageService.getMessages(privateUserId, currentCount, historyBatchSize);
+
+            if (olderMessages.length === 0) {
+                setHasMoreHistory(false);
+                return;
+            }
+
+            const nextMessages = [...olderMessages, ...messagesRef.current];
+            replaceMessagesIfChanged(nextMessages);
+            setHasMoreHistory(olderMessages.length >= historyBatchSize);
+
+            requestAnimationFrame(() => {
+                const nextHeight = container?.scrollHeight || 0;
+                if (container) {
+                    container.scrollTop = previousTop + (nextHeight - previousHeight);
+                }
+            });
+        } catch (err) {
+            console.error('Failed to load older messages:', err);
+        } finally {
+            loadingHistoryRef.current = false;
+            setLoadingMoreHistory(false);
+        }
     };
 
     useEffect(() => {
@@ -75,75 +223,55 @@ const ChatPage = () => {
         let mounted = true;
         let pollTimeoutId = null;
 
-        const load = async ({ initial = false, refreshMeta = false } = {}) => {
+        const runLoad = async ({ initial = false, refreshMeta = false } = {}) => {
             if (!mounted) return;
-            if (initial) setLoading(true);
+            if (initial) {
+                setLoading(true);
+                setHasMoreHistory(true);
+                loadingHistoryRef.current = false;
+                setLoadingMoreHistory(false);
+                commitMessages([]);
+            }
 
             try {
-                if (isGroupChat) {
-                    const requests = [messageService.getGroupMessages(groupId)];
-                    if (initial || refreshMeta) {
-                        requests.push(messageService.getGroupDetail(groupId));
-                    }
-                    const [groupMessages, detail] = await Promise.all(requests);
-                    if (!mounted) return;
-                    if (detail) {
-                        setGroupDetail(detail);
-                    }
-                    const didChange = replaceMessagesIfChanged(groupMessages);
-                    if (initial || didChange) {
-                        window.dispatchEvent(new CustomEvent('messageUnreadStateChanged', { detail: { type: 'group-read' } }));
-                    }
-                } else {
-                    const friendList = await messageService.getFriends();
-                    if (!mounted) return;
-
-                    const matchedFriend = friendList.find((item) => item.friend.uid === privateUserId);
-                    if (!matchedFriend) {
-                        alert('请先加好友再私信');
-                        navigate('/messages');
-                        return;
-                    }
-
-                    const privateMessages = await messageService.getMessages(privateUserId);
-                    if (!mounted) return;
-
-                    replaceMessagesIfChanged(privateMessages);
-                    setOtherUser(
-                        privateMessages.length > 0
-                            ? (privateMessages[0].sender_id === privateUserId ? privateMessages[0].sender : privateMessages[0].receiver)
-                            : matchedFriend.friend
-                    );
-                    await messageService.markAsRead(privateUserId);
-                }
+                await loadRecentMessages({ initial, refreshMeta });
             } catch (err) {
                 console.error('Failed to load chat:', err);
-                alert(err.response?.data?.detail || t('loadConvFailed'));
-                navigate('/messages');
+                if (initial) {
+                    alert(err.response?.data?.detail || t('loadConvFailed'));
+                    navigate('/messages');
+                }
             } finally {
-                if (mounted && initial) setLoading(false);
+                if (mounted && initial) {
+                    setLoading(false);
+                }
             }
         };
 
         const scheduleNextPoll = () => {
             if (!mounted) return;
             pollTimeoutId = window.setTimeout(async () => {
-                await load({ initial: false, refreshMeta: false });
+                if (document.visibilityState !== 'visible') {
+                    scheduleNextPoll();
+                    return;
+                }
+
+                await runLoad({ initial: false, refreshMeta: false });
                 scheduleNextPoll();
             }, isGroupChat ? GROUP_POLL_INTERVAL_MS : PRIVATE_POLL_INTERVAL_MS);
         };
 
         const handleMessageDataChanged = async () => {
-            await load({ initial: false, refreshMeta: isGroupChat });
+            await runLoad({ initial: false, refreshMeta: isGroupChat });
         };
 
         const handleAppFocus = async () => {
             if (document.visibilityState === 'visible') {
-                await load({ initial: false, refreshMeta: true });
+                await runLoad({ initial: false, refreshMeta: true });
             }
         };
 
-        load({ initial: true, refreshMeta: true }).finally(scheduleNextPoll);
+        runLoad({ initial: true, refreshMeta: true }).finally(scheduleNextPoll);
         window.addEventListener('messageDataChanged', handleMessageDataChanged);
         window.addEventListener('focus', handleAppFocus);
         document.addEventListener('visibilitychange', handleAppFocus);
@@ -157,11 +285,15 @@ const ChatPage = () => {
             window.removeEventListener('focus', handleAppFocus);
             document.removeEventListener('visibilitychange', handleAppFocus);
         };
-    }, [user, privateUserId, groupId, isGroupChat, navigate, t]);
+    }, [groupId, historyBatchSize, initialBatchSize, isGroupChat, navigate, privateUserId, syncBatchSize, t, user]);
 
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages.length]);
+        if (!shouldAutoScrollRef.current) {
+            return;
+        }
+
+        messagesEndRef.current?.scrollIntoView({ behavior: messages.length > 1 ? 'smooth' : 'auto' });
+    }, [messages]);
 
     useEffect(() => {
         if (!isGroupChat || !groupId) {
@@ -218,6 +350,20 @@ const ChatPage = () => {
         });
     };
 
+    const focusComposerAtEnd = () => {
+        const textarea = composerRef.current;
+        if (!textarea) {
+            return;
+        }
+
+        requestAnimationFrame(() => {
+            textarea.focus();
+            const cursor = textarea.value.length;
+            textarea.selectionStart = cursor;
+            textarea.selectionEnd = cursor;
+        });
+    };
+
     const handleUploadImage = async (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -241,21 +387,21 @@ const ChatPage = () => {
         const content = newMessage.trim();
         setNewMessage('');
         setSending(true);
+        shouldAutoScrollRef.current = true;
+
         try {
             const sent = isGroupChat
                 ? await messageService.sendGroupMessage(groupId, content)
                 : await messageService.sendMessage(privateUserId, content);
 
-            setMessages((prev) => {
-                const next = [...prev, sent];
-                previousMessageSignatureRef.current = buildMessageSignature(next);
-                return next;
-            });
+            const nextMessages = [...messagesRef.current, sent];
+            replaceMessagesIfChanged(nextMessages);
         } catch (err) {
             alert(err.response?.data?.detail || t('operationFailed'));
             setNewMessage(content);
         } finally {
             setSending(false);
+            focusComposerAtEnd();
         }
     };
 
@@ -269,6 +415,7 @@ const ChatPage = () => {
     const handleClearHistory = async () => {
         if (isGroupChat) return;
         if (!window.confirm(t('clearConfirm'))) return;
+
         try {
             await messageService.deleteConversation(privateUserId);
             navigate('/messages');
@@ -281,8 +428,9 @@ const ChatPage = () => {
         try {
             const detail = await messageService.joinGroup(groupId);
             setGroupDetail(detail);
-            const groupMessages = await messageService.getGroupMessages(groupId);
+            const groupMessages = await messageService.getGroupMessages(groupId, 0, initialBatchSize);
             replaceMessagesIfChanged(groupMessages);
+            setHasMoreHistory(groupMessages.length >= initialBatchSize);
         } catch (err) {
             alert(err.response?.data?.detail || t('operationFailed'));
         }
@@ -290,6 +438,7 @@ const ChatPage = () => {
 
     const handleInviteUser = async () => {
         if (!inviteUserId) return;
+
         try {
             await messageService.addGroupMember(groupId, parseInt(inviteUserId, 10));
             setInviteQuery('');
@@ -303,6 +452,7 @@ const ChatPage = () => {
 
     const handleLeaveGroup = async () => {
         if (!window.confirm('确定要退出这个群聊吗？')) return;
+
         try {
             await messageService.leaveGroup(groupId);
             navigate('/messages');
@@ -323,11 +473,24 @@ const ChatPage = () => {
         setMemberPanelOpen((prev) => !prev);
     };
 
+    const handleMessageListScroll = () => {
+        shouldAutoScrollRef.current = isNearBottom();
+        const container = messageListRef.current;
+        if (!container || loadingHistoryRef.current || !hasMoreHistory) {
+            return;
+        }
+
+        if (container.scrollTop <= HISTORY_LOAD_THRESHOLD_PX) {
+            loadOlderMessages();
+        }
+    };
+
     const formatMessageTime = (dateString) =>
         new Date(dateString).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
 
     const formatLastSeen = (dateString) => {
         if (!dateString) return '最近离线';
+
         const date = new Date(dateString);
         if (Number.isNaN(date.getTime())) return '最近离线';
 
@@ -337,6 +500,51 @@ const ChatPage = () => {
         if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)} 小时前在线`;
         return `${Math.floor(diffMinutes / 1440)} 天前在线`;
     };
+
+    const renderedMessages = useMemo(
+        () => messages.map((msg, index) => {
+            const isMe = msg.sender_id === user?.uid;
+            const showDateLabel =
+                index === 0 ||
+                new Date(msg.created_at).toDateString() !== new Date(messages[index - 1].created_at).toDateString();
+
+            return (
+                <React.Fragment key={`${isGroupChat ? 'g' : 'p'}-${msg.id}`}>
+                    {showDateLabel && (
+                        <div className="date-divider">
+                            <span>
+                                {new Date(msg.created_at).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}
+                            </span>
+                        </div>
+                    )}
+                    <div className={`qq-message-row ${isMe ? 'self' : 'other'}`}>
+                        {!isMe && (
+                            <div className="message-avatar">
+                                <AvatarIcon type={msg.sender?.avatar || 'eye'} size={36} />
+                            </div>
+                        )}
+
+                        <div className="message-stack">
+                            {isGroupChat && !isMe && (
+                                <div className="message-sender">{msg.sender?.nickname || msg.sender?.username}</div>
+                            )}
+                            <div className="message-bubble">
+                                <RichContent text={msg.content} />
+                            </div>
+                            <div className="message-time">{formatMessageTime(msg.created_at)}</div>
+                        </div>
+
+                        {isMe && (
+                            <div className="message-avatar">
+                                <AvatarIcon type={user.avatar || 'eye'} size={36} />
+                            </div>
+                        )}
+                    </div>
+                </React.Fragment>
+            );
+        }),
+        [isGroupChat, messages, user?.avatar, user?.uid]
+    );
 
     if (loading) {
         return <div className="loading-state">聊天记录加载中...</div>;
@@ -366,7 +574,7 @@ const ChatPage = () => {
                                 onClick={() => setGroupPanelOpen((prev) => !prev)}
                                 title="群聊管理"
                             >
-                                ⋯
+                                ⊕
                             </button>
                         ) : (
                             <button type="button" className="header-btn" onClick={handleClearHistory}>清空</button>
@@ -495,51 +703,16 @@ const ChatPage = () => {
                     </div>
                 )}
 
-                <main className="qq-chat-body">
+                <main className="qq-chat-body" ref={messageListRef} onScroll={handleMessageListScroll}>
+                    {(loadingMoreHistory || hasMoreHistory) && (
+                        <div className="history-loader">
+                            {loadingMoreHistory ? '正在加载更早消息...' : '上滑可加载更早消息'}
+                        </div>
+                    )}
                     {messages.length === 0 ? (
                         <div className="empty-chat">还没有聊天记录，发条消息开始吧。</div>
                     ) : (
-                        messages.map((msg, index) => {
-                            const isMe = msg.sender_id === user?.uid;
-                            const showDateLabel =
-                                index === 0 ||
-                                new Date(msg.created_at).toDateString() !== new Date(messages[index - 1].created_at).toDateString();
-
-                            return (
-                                <React.Fragment key={`${isGroupChat ? 'g' : 'p'}-${msg.id}`}>
-                                    {showDateLabel && (
-                                        <div className="date-divider">
-                                            <span>
-                                                {new Date(msg.created_at).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}
-                                            </span>
-                                        </div>
-                                    )}
-                                    <div className={`qq-message-row ${isMe ? 'self' : 'other'}`}>
-                                        {!isMe && (
-                                            <div className="message-avatar">
-                                                <AvatarIcon type={msg.sender?.avatar || 'eye'} size={36} />
-                                            </div>
-                                        )}
-
-                                        <div className="message-stack">
-                                            {isGroupChat && !isMe && (
-                                                <div className="message-sender">{msg.sender?.nickname || msg.sender?.username}</div>
-                                            )}
-                                            <div className="message-bubble">
-                                                <RichContent text={msg.content} />
-                                            </div>
-                                            <div className="message-time">{formatMessageTime(msg.created_at)}</div>
-                                        </div>
-
-                                        {isMe && (
-                                            <div className="message-avatar">
-                                                <AvatarIcon type={user.avatar || 'eye'} size={36} />
-                                            </div>
-                                        )}
-                                    </div>
-                                </React.Fragment>
-                            );
-                        })
+                        renderedMessages
                     )}
                     <div ref={messagesEndRef} />
                 </main>
@@ -550,8 +723,8 @@ const ChatPage = () => {
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="输入消息，按 Enter 发送，Shift+Enter 换行"
-                        rows={4}
+                        placeholder={t('chatPlaceholder')}
+                        rows={3}
                         disabled={sending || uploadingImage}
                     />
                     <div className="composer-toolbar">
@@ -562,9 +735,9 @@ const ChatPage = () => {
                                 className="emoji-picker-trigger composer-image-btn"
                                 onClick={() => imageInputRef.current?.click()}
                                 disabled={uploadingImage || sending}
-                                title="发送图片"
+                                title={t('imageBtn')}
                             >
-                                图片
+                                {t('imageBtn')}
                             </button>
                             <input
                                 ref={imageInputRef}
@@ -573,11 +746,13 @@ const ChatPage = () => {
                                 onChange={handleUploadImage}
                                 hidden
                             />
-                        </div>
-                        <div className="composer-actions">
-                            <span>{uploadingImage ? '图片上传中...' : sending ? '发送中...' : 'Enter 发送，Shift + Enter 换行'}</span>
-                            <button type="submit" className="send-btn" disabled={!newMessage.trim() || sending || uploadingImage}>
-                                发送
+                            <button
+                                type="submit"
+                                className="send-btn"
+                                disabled={!newMessage.trim() || sending || uploadingImage}
+                                onMouseDown={(e) => e.preventDefault()}
+                            >
+                                {sending ? t('sending') : t('send')}
                             </button>
                         </div>
                     </div>

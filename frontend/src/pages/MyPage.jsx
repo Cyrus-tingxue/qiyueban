@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { postService } from '../services/postService';
 import { authService } from '../services/authService';
 import { announcementService } from '../services/announcementService';
+import { messageService } from '../services/messageService';
 import { useAuth } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LanguageContext';
 import AvatarIcon from '../components/AvatarIcon';
@@ -30,6 +31,7 @@ function MyPage() {
     const [announcementSuccess, setAnnouncementSuccess] = useState('');
 
     const [notifications, setNotifications] = useState([]);
+    const [groupInvites, setGroupInvites] = useState([]);
     const [notifLoading, setNotifLoading] = useState(false);
 
     const [posts, setPosts] = useState([]);
@@ -64,8 +66,12 @@ function MyPage() {
     const loadNotifications = async () => {
         setNotifLoading(true);
         try {
-            const data = await postService.getNotifications(1, 50);
+            const [data, inviteData] = await Promise.all([
+                postService.getNotifications(1, 50),
+                messageService.getGroupInvites(),
+            ]);
             setNotifications(data.items || []);
+            setGroupInvites(inviteData || []);
         } catch (e) {
             console.error("加载消息失败", e);
         } finally {
@@ -109,6 +115,25 @@ function MyPage() {
         } catch (e) {
             alert(t('operationFailed'));
             loadNotifications();
+        }
+    };
+
+    const handleAcceptGroupInvite = async (inviteId) => {
+        try {
+            const invite = await messageService.acceptGroupInvite(inviteId);
+            await loadNotifications();
+            navigate(`/chat/group/${invite.group_id}`);
+        } catch (err) {
+            alert(err.response?.data?.detail || t('operationFailed'));
+        }
+    };
+
+    const handleRejectGroupInvite = async (inviteId) => {
+        try {
+            await messageService.rejectGroupInvite(inviteId);
+            await loadNotifications();
+        } catch (err) {
+            alert(err.response?.data?.detail || t('operationFailed'));
         }
     };
 
@@ -233,10 +258,32 @@ function MyPage() {
                         </div>
                         {notifLoading ? (
                             <p className="my-loading-text">{t('loading')}</p>
-                        ) : notifications.length === 0 ? (
+                        ) : notifications.length === 0 && groupInvites.length === 0 ? (
                             <div className="my-empty-text">{t('noNotifications')}</div>
                         ) : (
                             <div className="my-notif-list">
+                                {groupInvites.map((invite) => (
+                                    <div key={`group-invite-${invite.id}`} className="my-notif-item unread">
+                                        <div className="my-notif-avatar">
+                                            <AvatarIcon type="eye" size={40} />
+                                        </div>
+                                        <div className="my-notif-body">
+                                            <p>
+                                                <span className="my-notif-sender">{invite.inviter?.nickname || invite.inviter?.username || t('someone')}</span>
+                                                {' '}邀请你加入群聊「{invite.group_name}」
+                                            </p>
+                                            <span className="my-notif-time">{invite.created_at}</span>
+                                            <div className="chat-list-actions friend-request-actions">
+                                                <button type="button" className="mini-btn friend-request-btn" onClick={() => handleAcceptGroupInvite(invite.id)}>
+                                                    同意
+                                                </button>
+                                                <button type="button" className="mini-btn ghost-mini-btn friend-request-btn" onClick={() => handleRejectGroupInvite(invite.id)}>
+                                                    拒绝
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                                 {notifications.map(notif => (
                                     <div
                                         key={notif.id}

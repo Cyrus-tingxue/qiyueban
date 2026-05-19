@@ -138,8 +138,7 @@
 
 .target-meta,
 .message-time,
-.message-sender,
-.composer-actions span {
+.message-sender {
     color: var(--color-text-muted);
     font-size: 0.75rem;
 }
@@ -326,6 +325,27 @@
     margin: 6px 0 14px;
 }
 
+.history-loader {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    margin: -4px 0 14px;
+    color: var(--color-text-muted);
+    font-size: 0.76rem;
+}
+
+.history-loader::before {
+    content: '';
+}
+
+.history-loader {
+    padding: 6px 10px;
+    background: linear-gradient(180deg, rgba(10, 14, 20, 0.92), rgba(10, 14, 20, 0.62));
+    backdrop-filter: blur(6px);
+}
+
 .date-divider span {
     padding: 4px 12px;
     border-radius: 999px;
@@ -398,7 +418,7 @@
 }
 
 .qq-chat-composer {
-    padding: 12px 14px 16px;
+    padding: 10px 12px 12px;
     border-top: 1px solid var(--color-border-dim);
     background: rgba(7, 9, 14, 0.94);
 }
@@ -407,28 +427,37 @@
     width: 100%;
     box-sizing: border-box;
     resize: none;
-    padding: 12px 14px;
+    min-height: 88px;
+    max-height: 140px;
+    margin-top: 4px;
+    padding: 10px 12px;
     border: 1px solid var(--color-border-dim);
     background: rgba(255, 255, 255, 0.03);
     color: var(--color-text-primary);
-    line-height: 1.7;
-    font-size: 0.92rem;
+    line-height: 1.55;
+    font-size: 0.9rem;
+    overflow-y: auto;
 }
 
 .composer-toolbar {
-    justify-content: space-between;
-    gap: 12px;
+    display: flex;
+    align-items: center;
     margin-top: 10px;
 }
 
 .composer-tools {
+    width: 100%;
     gap: 10px;
+    flex-wrap: nowrap;
+    align-items: center;
+    min-width: 0;
 }
 
 .composer-image-btn {
     padding: 4px 12px;
     line-height: 1.4;
     letter-spacing: 2px;
+    flex: 0 0 auto;
 }
 
 .composer-image-btn:disabled {
@@ -436,18 +465,15 @@
     cursor: not-allowed;
 }
 
-.composer-actions {
-    justify-content: flex-end;
-    gap: 12px;
-    flex: 1;
-}
-
 .send-btn {
-    padding: 10px 18px;
+    margin-left: auto;
+    flex: 0 0 128px;
+    padding: 8px 24px;
     border: 1px solid rgba(196, 43, 43, 0.35);
     background: rgba(196, 43, 43, 0.18);
     color: #fff3ee;
     font-size: 0.86rem;
+    line-height: 1.4;
 }
 
 .send-btn:hover,
@@ -492,7 +518,7 @@
 
 @media (max-width: 760px) {
     .chat-page {
-        padding: 10px 8px 22px;
+        padding: 8px 6px 12px;
         height: calc(100dvh - 58px);
         max-height: calc(100dvh - 58px);
     }
@@ -503,7 +529,7 @@
     }
 
     .qq-chat-header {
-        padding: 10px 12px;
+        padding: 8px 10px;
     }
 
     .chat-header-side {
@@ -511,26 +537,65 @@
     }
 
     .header-btn {
-        padding: 7px 10px;
-        font-size: 0.8rem;
+        padding: 6px 8px;
+        font-size: 0.78rem;
     }
 
     .target-copy {
         text-align: left;
     }
 
-    .qq-group-panel-row,
-    .composer-toolbar,
-    .composer-actions {
+    .target-name {
+        font-size: 0.94rem;
+    }
+
+    .target-meta {
+        font-size: 0.72rem;
+    }
+
+    .qq-chat-body {
+        padding: 12px 10px 14px;
+    }
+
+    .qq-message-row {
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    .message-stack {
+        max-width: calc(100% - 44px);
+    }
+
+    .message-bubble {
+        padding: 8px 10px;
+        font-size: 0.92rem;
+        line-height: 1.58;
+    }
+
+    .qq-group-panel-row {
         flex-direction: column;
         align-items: stretch;
     }
 
-    .composer-actions {
+    .qq-chat-composer {
+        padding: 8px 10px 10px;
+    }
+
+    .qq-chat-composer textarea {
+        min-height: 64px;
+        max-height: 104px;
+        margin-top: 2px;
+        padding: 8px 10px;
+        font-size: 0.88rem;
+        line-height: 1.45;
+    }
+
+    .composer-tools {
         gap: 8px;
     }
 
-    .message-stack {
-        max-width: 100%;
+    .send-btn {
+        flex-basis: 96px;
+        padding: 8px 14px;
     }
 }

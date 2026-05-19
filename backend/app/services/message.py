@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, case, func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from ..models.chat_group import ChatGroup, ChatGroupMember
@@ -249,7 +249,7 @@ def send_message(db: Session, sender_id: int, message_in):
 
 
 def get_messages_between_users(db: Session, user1_id: int, user2_id: int, skip: int = 0, limit: int = 50):
-    return (
+    messages = (
         db.query(Message)
         .options(joinedload(Message.sender), joinedload(Message.receiver))
         .filter(
@@ -259,11 +259,13 @@ def get_messages_between_users(db: Session, user1_id: int, user2_id: int, skip: 
             )
         )
         .filter(_visibility_filter_for_user(user1_id))
-        .order_by(Message.created_at.asc())
+        .order_by(Message.created_at.desc(), Message.id.desc())
         .offset(skip)
         .limit(limit)
         .all()
     )
+    messages.reverse()
+    return messages
 
 
 def mark_messages_as_read(db: Session, current_user_id: int, sender_id: int):
@@ -292,61 +294,83 @@ def get_total_unread_count(db: Session, user_id: int):
         .count()
     )
 
-    memberships = db.query(ChatGroupMember).filter(ChatGroupMember.user_id == user_id).all()
-    group_unread_count = 0
-    for membership in memberships:
-        last_read_message_id = membership.last_read_message_id or 0
-        group_unread_count += (
-            db.query(GroupMessage)
-            .filter(
-                GroupMessage.group_id == membership.group_id,
-                GroupMessage.id > last_read_message_id,
-                GroupMessage.sender_id != user_id,
-            )
-            .count()
+    group_unread_count = (
+        db.query(func.count(GroupMessage.id))
+        .join(ChatGroupMember, ChatGroupMember.group_id == GroupMessage.group_id)
+        .filter(
+            ChatGroupMember.user_id == user_id,
+            GroupMessage.id > func.coalesce(ChatGroupMember.last_read_message_id, 0),
+            GroupMessage.sender_id != user_id,
         )
+        .scalar()
+        or 0
+    )
 
     return private_unread_count + group_unread_count
 
 
 def get_conversations(db: Session, user_id: int, skip: int = 0, limit: int = 20):
+    other_user_id_expr = case(
+        (Message.sender_id == user_id, Message.receiver_id),
+        else_=Message.sender_id,
+    )
+    latest_message_ids = (
+        db.query(
+            other_user_id_expr.label("other_user_id"),
+            func.max(Message.id).label("latest_message_id"),
+        )
+        .filter(or_(Message.sender_id == user_id, Message.receiver_id == user_id))
+        .filter(_visibility_filter_for_user(user_id))
+        .group_by(other_user_id_expr)
+        .subquery()
+    )
+
     messages = (
         db.query(Message)
         .options(joinedload(Message.sender), joinedload(Message.receiver))
-        .filter(or_(Message.sender_id == user_id, Message.receiver_id == user_id))
-        .filter(_visibility_filter_for_user(user_id))
-        .order_by(Message.created_at.desc())
+        .join(latest_message_ids, Message.id == latest_message_ids.c.latest_message_id)
+        .order_by(Message.created_at.desc(), Message.id.desc())
+        .offset(skip)
+        .limit(limit)
         .all()
     )
 
     conversations = []
-    seen = set()
+    other_user_ids = []
     for msg in messages:
         other_user = msg.receiver if msg.sender_id == user_id else msg.sender
-        other_user_id = other_user.id if other_user else None
-        if not other_user_id or other_user_id in seen:
+        if not other_user:
             continue
-        seen.add(other_user_id)
-
-        unread_count = (
-            db.query(Message)
-            .filter(
-                Message.sender_id == other_user_id,
-                Message.receiver_id == user_id,
-                Message.is_read.is_(False),
-                Message.receiver_deleted_at.is_(None),
-            )
-            .count()
-        )
+        other_user_ids.append(other_user.id)
         conversations.append(
             {
                 "with_user": other_user,
                 "last_message": msg,
-                "unread_count": unread_count,
+                "unread_count": 0,
             }
         )
 
-    return conversations[skip : skip + limit]
+    unread_counts = {}
+    if other_user_ids:
+        unread_counts = {
+            sender_id: unread_count
+            for sender_id, unread_count in (
+                db.query(Message.sender_id, func.count(Message.id))
+                .filter(
+                    Message.receiver_id == user_id,
+                    Message.sender_id.in_(other_user_ids),
+                    Message.is_read.is_(False),
+                    Message.receiver_deleted_at.is_(None),
+                )
+                .group_by(Message.sender_id)
+                .all()
+            )
+        }
+
+    for conversation in conversations:
+        conversation["unread_count"] = unread_counts.get(conversation["with_user"].id, 0)
+
+    return conversations
 
 
 def delete_conversation(db: Session, current_user_id: int, other_user_id: int):
@@ -394,45 +418,80 @@ def delete_conversation(db: Session, current_user_id: int, other_user_id: int):
 
 def list_groups(db: Session, current_user_id: int):
     groups = db.query(ChatGroup).options(joinedload(ChatGroup.creator)).order_by(ChatGroup.created_at.desc()).all()
+    if not groups:
+        return []
+    group_ids = [group.id for group in groups]
 
-    results = []
-    for group in groups:
-        member_count = db.query(ChatGroupMember).filter(ChatGroupMember.group_id == group.id).count()
-        membership = (
+    member_counts = {
+        group_id: count
+        for group_id, count in (
+            db.query(ChatGroupMember.group_id, func.count(ChatGroupMember.id))
+            .filter(ChatGroupMember.group_id.in_(group_ids))
+            .group_by(ChatGroupMember.group_id)
+            .all()
+        )
+    }
+
+    memberships = {
+        membership.group_id: membership
+        for membership in (
             db.query(ChatGroupMember)
-            .filter(ChatGroupMember.group_id == group.id, ChatGroupMember.user_id == current_user_id)
-            .first()
-        )
-        is_member = membership is not None
-        last_message = (
-            db.query(GroupMessage)
-            .options(joinedload(GroupMessage.sender))
-            .filter(GroupMessage.group_id == group.id)
-            .order_by(GroupMessage.created_at.desc())
-            .first()
-        )
-        unread_count = 0
-        if membership:
-            last_read_message_id = membership.last_read_message_id or 0
-            unread_count = (
-                db.query(GroupMessage)
-                .filter(
-                    GroupMessage.group_id == group.id,
-                    GroupMessage.id > last_read_message_id,
-                    GroupMessage.sender_id != current_user_id,
-                )
-                .count()
+            .filter(
+                ChatGroupMember.group_id.in_(group_ids),
+                ChatGroupMember.user_id == current_user_id,
             )
-        results.append(
-            {
-                "group": group,
-                "member_count": member_count,
-                "is_member": is_member,
-                "last_message": last_message,
-                "unread_count": unread_count,
-            }
+            .all()
         )
-    return results
+    }
+
+    latest_message_ids = {
+        group_id: message_id
+        for group_id, message_id in (
+            db.query(GroupMessage.group_id, func.max(GroupMessage.id))
+            .filter(GroupMessage.group_id.in_(group_ids))
+            .group_by(GroupMessage.group_id)
+            .all()
+        )
+    }
+
+    latest_messages = {}
+    if latest_message_ids:
+        latest_messages = {
+            message.id: message
+            for message in (
+                db.query(GroupMessage)
+                .options(joinedload(GroupMessage.sender))
+                .filter(GroupMessage.id.in_(list(latest_message_ids.values())))
+                .all()
+            )
+        }
+
+    unread_counts = {
+        group_id: unread_count
+        for group_id, unread_count in (
+            db.query(GroupMessage.group_id, func.count(GroupMessage.id))
+            .join(ChatGroupMember, ChatGroupMember.group_id == GroupMessage.group_id)
+            .filter(
+                ChatGroupMember.user_id == current_user_id,
+                ChatGroupMember.group_id.in_(group_ids),
+                GroupMessage.id > func.coalesce(ChatGroupMember.last_read_message_id, 0),
+                GroupMessage.sender_id != current_user_id,
+            )
+            .group_by(GroupMessage.group_id)
+            .all()
+        )
+    }
+
+    return [
+        {
+            "group": group,
+            "member_count": member_counts.get(group.id, 0),
+            "is_member": group.id in memberships,
+            "last_message": latest_messages.get(latest_message_ids.get(group.id)),
+            "unread_count": unread_counts.get(group.id, 0),
+        }
+        for group in groups
+    ]
 
 
 def create_group(db: Session, creator_id: int, payload):
@@ -696,10 +755,21 @@ def respond_to_group_invite(db: Session, invite_id: int, current_user_id: int, a
     if invite.invitee_id != current_user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="鏃犳潈澶勭悊璇ラ個璇?")
 
-    invite.status = "accepted" if accept else "rejected"
-    invite.responded_at = _utcnow()
-
     if accept:
+        duplicate_accepted_invites = (
+            db.query(ChatGroupInvite)
+            .filter(
+                ChatGroupInvite.group_id == invite.group_id,
+                ChatGroupInvite.invitee_id == current_user_id,
+                ChatGroupInvite.status == "accepted",
+                ChatGroupInvite.id != invite.id,
+            )
+            .all()
+        )
+        for duplicate_invite in duplicate_accepted_invites:
+            duplicate_invite.status = "accepted_archived"
+            duplicate_invite.responded_at = duplicate_invite.responded_at or _utcnow()
+
         membership = db.query(ChatGroupMember).filter(
             ChatGroupMember.group_id == invite.group_id,
             ChatGroupMember.user_id == current_user_id,
@@ -713,6 +783,11 @@ def respond_to_group_invite(db: Session, invite_id: int, current_user_id: int, a
                     last_read_message_id=_get_latest_group_message_id(db, invite.group_id),
                 )
             )
+        invite.status = "accepted"
+    else:
+        invite.status = "rejected"
+
+    invite.responded_at = _utcnow()
 
     db.query(Notification).filter(
         Notification.type == "group_invite",
@@ -737,11 +812,12 @@ def get_group_messages(db: Session, group_id: int, current_user_id: int, skip: i
         db.query(GroupMessage)
         .options(joinedload(GroupMessage.sender))
         .filter(GroupMessage.group_id == group_id)
-        .order_by(GroupMessage.created_at.asc())
+        .order_by(GroupMessage.created_at.desc(), GroupMessage.id.desc())
         .offset(skip)
         .limit(limit)
         .all()
     )
+    messages.reverse()
     latest_visible_message = messages[-1] if messages else None
     if latest_visible_message and membership.last_read_message_id != latest_visible_message.id:
         membership.last_read_message_id = latest_visible_message.id

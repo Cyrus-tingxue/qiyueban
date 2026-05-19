@@ -2,7 +2,7 @@ import { useLang } from '../contexts/LanguageContext';
 import PostItem from './PostItem';
 import './PostList.css';
 
-function PostList({ posts, loading }) {
+function PostList({ posts, loading, refreshing = false }) {
     const { t } = useLang();
 
     if (loading) {
@@ -14,7 +14,8 @@ function PostList({ posts, loading }) {
     }
 
     return (
-        <div className="post-list">
+        <div className={`post-list ${refreshing ? 'is-refreshing' : ''}`}>
+            {refreshing && <div className="post-list-refresh-indicator">刷新中...</div>}
             {posts.map((post, index) => (
                 <PostItem key={post.id} post={post} index={index} />
             ))}

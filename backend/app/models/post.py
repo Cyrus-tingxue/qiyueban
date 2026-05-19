@@ -17,12 +17,12 @@ class Post(Base):
     __tablename__ = "posts"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    title = Column(String(200), nullable=False)
+    title = Column(String(500), nullable=False)
     content = Column(Text, default="")
     image_url = Column(String(500), nullable=True)
     category = Column(String(20), ForeignKey("categories.name"), nullable=False, index=True)
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    author_name = Column(String(50), nullable=False)
+    author_name = Column(String(255), nullable=False)
     reply_count = Column(Integer, default=0)
     like_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
@@ -40,11 +40,11 @@ class Reply(Base):
     image_url = Column(String(500), nullable=True)
     post_id = Column(Integer, ForeignKey("posts.id"), nullable=False, index=True)
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    author_name = Column(String(50), nullable=False)
+    author_name = Column(String(255), nullable=False)
     like_count = Column(Integer, default=0)
     reply_to_id = Column(Integer, ForeignKey("replies.id", ondelete="SET NULL"), nullable=True)
     reply_to_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    reply_to_username = Column(String(50), nullable=True)
+    reply_to_username = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     post = relationship("Post", back_populates="replies")

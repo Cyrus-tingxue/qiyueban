@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from .config import DATABASE_URL
@@ -10,6 +10,10 @@ echo_sql = os.getenv("SQLALCHEMY_ECHO", "False").lower() in ("true", "1", "t")
 engine = create_engine(
     DATABASE_URL,
     connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
+    pool_pre_ping=True,
+    pool_recycle=1800,
+    pool_size=10 if "sqlite" not in DATABASE_URL else 5,
+    max_overflow=20 if "sqlite" not in DATABASE_URL else 10,
     echo=echo_sql,
 )
 
@@ -40,12 +44,11 @@ def init_db():
     from . import models  # noqa: F401
     
     # 因为使用 SQLite 且没有完整应用 Alembic，手工加上新字段（防止 drop 表丢失数据）
-    from sqlalchemy import text
     try:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE replies ADD COLUMN reply_to_id INTEGER REFERENCES replies(id)"))
             conn.execute(text("ALTER TABLE replies ADD COLUMN reply_to_user_id INTEGER REFERENCES users(id)"))
-            conn.execute(text("ALTER TABLE replies ADD COLUMN reply_to_username VARCHAR(50)"))
+            conn.execute(text("ALTER TABLE replies ADD COLUMN reply_to_username VARCHAR(255)"))
     except Exception:
         pass
 
@@ -117,6 +120,19 @@ def init_db():
 
     for statement in (
         "CREATE INDEX IF NOT EXISTS ix_notifications_type_target_receiver ON notifications(type, target_id, receiver_id)",
+        "CREATE INDEX IF NOT EXISTS ix_notifications_receiver_created_at ON notifications(receiver_id, created_at)",
+        "CREATE INDEX IF NOT EXISTS ix_notifications_receiver_is_read ON notifications(receiver_id, is_read)",
+        "CREATE INDEX IF NOT EXISTS ix_messages_sender_receiver_created_at ON messages(sender_id, receiver_id, created_at)",
+        "CREATE INDEX IF NOT EXISTS ix_messages_receiver_sender_id ON messages(receiver_id, sender_id, id)",
+        "CREATE INDEX IF NOT EXISTS ix_messages_receiver_sender_read_deleted ON messages(receiver_id, sender_id, is_read, receiver_deleted_at)",
+        "CREATE INDEX IF NOT EXISTS ix_group_messages_group_created_at ON group_messages(group_id, created_at)",
+        "CREATE INDEX IF NOT EXISTS ix_group_messages_group_id_id ON group_messages(group_id, id)",
+        "CREATE INDEX IF NOT EXISTS ix_chat_group_members_group_user ON chat_group_members(group_id, user_id)",
+        "CREATE INDEX IF NOT EXISTS ix_chat_group_members_user_group ON chat_group_members(user_id, group_id)",
+        "CREATE INDEX IF NOT EXISTS ix_group_invites_invitee_status_created_at ON chat_group_invites(invitee_id, status, created_at)",
+        "CREATE INDEX IF NOT EXISTS ix_posts_author_created_at ON posts(author_id, created_at)",
+        "CREATE INDEX IF NOT EXISTS ix_posts_category_created_at ON posts(category, created_at)",
+        "CREATE INDEX IF NOT EXISTS ix_replies_post_created_at ON replies(post_id, created_at)",
     ):
         try:
             with engine.begin() as conn:
@@ -125,3 +141,25 @@ def init_db():
             pass
 
     Base.metadata.create_all(bind=engine)
+    apply_postgres_column_expansions(engine)
+
+
+def apply_postgres_column_expansions(target_engine):
+    if not str(target_engine.url).startswith("postgresql"):
+        return
+
+    statements = (
+        'ALTER TABLE users ALTER COLUMN username TYPE VARCHAR(255)',
+        'ALTER TABLE users ALTER COLUMN nickname TYPE VARCHAR(255)',
+        'ALTER TABLE posts ALTER COLUMN title TYPE VARCHAR(500)',
+        'ALTER TABLE posts ALTER COLUMN author_name TYPE VARCHAR(255)',
+        'ALTER TABLE replies ALTER COLUMN author_name TYPE VARCHAR(255)',
+        'ALTER TABLE replies ALTER COLUMN reply_to_username TYPE VARCHAR(255)',
+        'ALTER TABLE notifications ALTER COLUMN sender_name TYPE VARCHAR(255)',
+    )
+    for statement in statements:
+        try:
+            with target_engine.begin() as conn:
+                conn.execute(text(statement))
+        except Exception:
+            pass

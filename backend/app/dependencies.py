@@ -10,7 +10,7 @@ from .services.auth import decode_token
 
 security = HTTPBearer()
 optional_security = HTTPBearer(auto_error=False)
-LAST_SEEN_WRITE_INTERVAL = timedelta(seconds=10)
+LAST_SEEN_WRITE_INTERVAL = timedelta(seconds=30)
 
 
 def touch_user_last_seen(db: Session, user: User):

@@ -115,7 +115,7 @@ const en = {
     clearConfirm: 'Are you sure you want to permanently clear chat history with this user? This cannot be undone.',
     clearFailed: 'Clear failed, please try again.',
     sayHello: 'Say hello!',
-    chatPlaceholder: 'Type a message, Enter to send, Shift+Enter for new line',
+    chatPlaceholder: 'Type a message',
     send: 'Send',
     loadingChat: 'Loading chat...',
 

@@ -8,7 +8,7 @@ class Notification(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     receiver_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     sender_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    sender_name = Column(String(50), nullable=True)
+    sender_name = Column(String(255), nullable=True)
     sender_avatar = Column(String(255), default="")
     type = Column(String(32), nullable=False)  # 'reply', 'mention', 'reply_mention', 'friend_request'
     target_id = Column(Integer, nullable=True) # 回复ID或其它目标的ID

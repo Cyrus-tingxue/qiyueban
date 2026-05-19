@@ -121,6 +121,10 @@
 }
 
 .home-tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     padding: 9px 14px;
     border: 1px solid var(--color-border-dim);
     border-radius: 0;
@@ -128,6 +132,50 @@
     color: var(--color-text-secondary);
     cursor: pointer;
     font-size: 0.9rem;
+}
+
+.tab-badge,
+.pending-section-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: rgba(196, 43, 43, 0.88);
+    color: #fff;
+    font-size: 0.72rem;
+    line-height: 1;
+}
+
+.pending-section {
+    padding: 16px 16px 0;
+}
+
+.pending-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.pending-section-head h3 {
+    margin: 0;
+    color: #fff4ef;
+    font-size: 0.96rem;
+    font-weight: 600;
+}
+
+.pending-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.pending-invite-item {
+    margin: 0;
 }
 
 .chat-list {

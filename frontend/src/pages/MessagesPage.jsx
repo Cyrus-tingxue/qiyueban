@@ -48,7 +48,7 @@ const MessagesPage = () => {
         let disposed = false;
 
         const safeFetchAll = async () => {
-            if (disposed) return;
+            if (disposed || document.visibilityState !== 'visible') return;
             await fetchAll({ silent: true });
         };
 
@@ -107,8 +107,8 @@ const MessagesPage = () => {
         try {
             if (!silent) {
                 setLoading(true);
+                setError('');
             }
-            setError('');
             const [conversationData, friendData, requestData, groupInviteData, groupData] = await Promise.all([
                 messageService.getConversations(),
                 messageService.getFriends(),
@@ -123,7 +123,9 @@ const MessagesPage = () => {
             setGroups(groupData);
         } catch (err) {
             console.error('Failed to load message dashboard:', err);
-            setError(t('loadConvFailed'));
+            if (!silent) {
+                setError(t('loadConvFailed'));
+            }
         } finally {
             if (!silent) {
                 setLoading(false);
@@ -197,25 +199,6 @@ const MessagesPage = () => {
     const handleRejectFriendRequest = async (requestId) => {
         try {
             await messageService.rejectFriendRequest(requestId);
-            await fetchAll();
-        } catch (err) {
-            alert(err.response?.data?.detail || t('operationFailed'));
-        }
-    };
-
-    const handleAcceptGroupInvite = async (inviteId) => {
-        try {
-            const invite = await messageService.acceptGroupInvite(inviteId);
-            await fetchAll();
-            navigate(`/chat/group/${invite.group_id}`);
-        } catch (err) {
-            alert(err.response?.data?.detail || t('operationFailed'));
-        }
-    };
-
-    const handleRejectGroupInvite = async (inviteId) => {
-        try {
-            await messageService.rejectGroupInvite(inviteId);
             await fetchAll();
         } catch (err) {
             alert(err.response?.data?.detail || t('operationFailed'));
@@ -423,33 +406,8 @@ const MessagesPage = () => {
                         </>
                     ) : (
                         <>
-                            {groupInvites.map((invite) => (
-                                <div key={invite.id} className="chat-list-item friend-request-item">
-                                    <div className="chat-list-avatar group-avatar">
-                                        <AvatarIcon type="eye" size={44} />
-                                    </div>
-                                    <div className="chat-list-copy friend-request-copy">
-                                        <div className="friend-request-head">
-                                            <div className="chat-list-name">{invite.group_name}</div>
-                                            <span className="friend-request-badge">群聊邀请</span>
-                                        </div>
-                                        <div className="chat-list-subtitle">
-                                            {invite.inviter?.nickname || invite.inviter?.username} 邀请你加入该群聊
-                                        </div>
-                                    </div>
-                                    <div className="chat-list-actions friend-request-actions">
-                                        <button type="button" className="mini-btn friend-request-btn" onClick={() => handleAcceptGroupInvite(invite.id)}>
-                                            同意
-                                        </button>
-                                        <button type="button" className="mini-btn ghost-mini-btn friend-request-btn" onClick={() => handleRejectGroupInvite(invite.id)}>
-                                            拒绝
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-
                             {joinedGroups.length === 0 ? (
-                                <div className="empty-state">还没有加入群聊</div>
+                                <div className="empty-state">{groupInvites.length > 0 ? '暂无已加入的群聊' : '还没有加入群聊'}</div>
                             ) : (
                                 joinedGroups.map((group) => (
                                     <button

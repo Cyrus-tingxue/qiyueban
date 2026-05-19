@@ -116,7 +116,7 @@ const zh = {
     clearConfirm: '确定要永久清空与该用户的聊天记录吗？此操作不可逆。',
     clearFailed: '清空失败，请稍后重试。',
     sayHello: '打个招呼吧～',
-    chatPlaceholder: '输入消息，按 Enter 发送，Shift+Enter 换行',
+    chatPlaceholder: '输入消息',
     send: '发送',
     loadingChat: '加载聊天记录中...',
 

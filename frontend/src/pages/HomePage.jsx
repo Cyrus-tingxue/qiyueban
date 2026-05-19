@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { startTransition, useDeferredValue, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useLang } from '../contexts/LanguageContext';
 import PostList from '../components/PostList';
@@ -11,6 +11,7 @@ function HomePage() {
     const { t } = useLang();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
     const getInitialPage = () => {
         const savedPage = sessionStorage.getItem(`home_page_${location.pathname}`);
@@ -24,8 +25,10 @@ function HomePage() {
     const searchParams = new URLSearchParams(location.search);
     const searchQuery = searchParams.get('search');
 
-    const prevPathnameRef = React.useRef(location.pathname);
-    const prevSearchQueryRef = React.useRef(searchQuery);
+    const prevPathnameRef = useRef(location.pathname);
+    const prevSearchQueryRef = useRef(searchQuery);
+    const latestRequestRef = useRef(0);
+    const deferredPosts = useDeferredValue(posts);
 
     useEffect(() => {
         const isPathChanged = prevPathnameRef.current !== location.pathname;
@@ -59,7 +62,16 @@ function HomePage() {
     }, [currentPage, location.pathname, searchQuery]);
 
     const loadPosts = async (page, search) => {
-        setLoading(true);
+        const requestId = latestRequestRef.current + 1;
+        latestRequestRef.current = requestId;
+        const hasCachedPosts = posts.length > 0;
+
+        if (!hasCachedPosts) {
+            setLoading(true);
+        } else {
+            setRefreshing(true);
+        }
+
         const isFeatured = location.pathname === '/featured';
         let categoryArg = null;
 
@@ -71,14 +83,31 @@ function HomePage() {
 
         try {
             const data = await postService.getPosts(page, pageSize, categoryArg, isFeatured ? 'likes' : 'newest', search);
-            setPosts(data.items || []);
-            setTotalPages(data.total_pages || 1);
+            if (latestRequestRef.current !== requestId) {
+                return;
+            }
+
+            startTransition(() => {
+                setPosts(data.items || []);
+                setTotalPages(data.total_pages || 1);
+            });
         } catch {
-            setPosts([]);
-            setTotalPages(1);
+            if (latestRequestRef.current !== requestId) {
+                return;
+            }
+
+            startTransition(() => {
+                setPosts([]);
+                setTotalPages(1);
+            });
         } finally {
+            if (latestRequestRef.current !== requestId) {
+                return;
+            }
+
             setLoading(false);
-            setTimeout(() => {
+            setRefreshing(false);
+            requestAnimationFrame(() => {
                 const savedScroll = sessionStorage.getItem(`home_scroll_${location.pathname}`);
                 if (savedScroll !== null) {
                     window.scrollTo({
@@ -86,7 +115,7 @@ function HomePage() {
                         behavior: 'instant'
                     });
                 }
-            }, 100);
+            });
         }
     };
 
@@ -97,7 +126,7 @@ function HomePage() {
                     {t('searchResults')}"{searchQuery}"
                 </div>
             )}
-            <PostList posts={posts} loading={loading} />
+            <PostList posts={deferredPosts} loading={loading} refreshing={refreshing} />
             {totalPages > 1 && (
                 <Pagination
                     currentPage={currentPage}

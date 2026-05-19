@@ -2,6 +2,7 @@ from datetime import timezone
 import zoneinfo
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -22,6 +23,13 @@ def format_datetime(dt):
     return dt.astimezone(shanghai_tz).strftime("%Y-%m-%d %H:%M")
 
 
+def notification_feed_query(db: Session, user_id: int):
+    return db.query(Notification).filter(
+        Notification.receiver_id == user_id,
+        Notification.type != "group_invite",
+    )
+
+
 @router.get("/notifications", response_model=NotificationListResponse)
 def list_notifications(
     db: Session = Depends(get_db),
@@ -29,19 +37,35 @@ def list_notifications(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
 ):
-    query = db.query(Notification).filter(Notification.receiver_id == current_user.id)
+    query = notification_feed_query(db, current_user.id)
     total = query.count()
-    unread_count = query.filter(Notification.is_read.is_(False)).count()
-    items = query.order_by(Notification.created_at.desc()).offset(skip).limit(limit).all()
+    unread_count = (
+        db.query(func.count(Notification.id))
+        .filter(
+            Notification.receiver_id == current_user.id,
+            Notification.type != "group_invite",
+            Notification.is_read.is_(False),
+        )
+        .scalar()
+        or 0
+    )
+    items = query.order_by(Notification.created_at.desc(), Notification.id.desc()).offset(skip).limit(limit).all()
+
+    sender_ids = {notif.sender_id for notif in items if notif.sender_id}
+    sender_avatar_map = {}
+    if sender_ids:
+        sender_avatar_map = {
+            user.id: user.avatar
+            for user in db.query(User.id, User.avatar).filter(User.id.in_(sender_ids)).all()
+        }
 
     results = []
     for notif in items:
-        sender = db.query(User).filter(User.id == notif.sender_id).first() if notif.sender_id else None
         results.append(NotificationResponse(
             id=notif.id,
             sender_id=notif.sender_id,
             sender_name=notif.sender_name,
-            sender_avatar=sender.avatar if sender else notif.sender_avatar,
+            sender_avatar=sender_avatar_map.get(notif.sender_id, notif.sender_avatar),
             type=notif.type,
             target_id=notif.target_id,
             post_id=notif.post_id,
@@ -61,14 +85,9 @@ def get_unread_notification_count(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    unread_count = (
-        db.query(Notification)
-        .filter(
-            Notification.receiver_id == current_user.id,
-            Notification.is_read.is_(False),
-        )
-        .count()
-    )
+    unread_count = notification_feed_query(db, current_user.id).filter(
+        Notification.is_read.is_(False),
+    ).count()
     return {"unread_count": unread_count}
 
 
@@ -95,8 +114,7 @@ def read_all_notifications(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    db.query(Notification).filter(
-        Notification.receiver_id == current_user.id,
+    notification_feed_query(db, current_user.id).filter(
         Notification.is_read.is_(False),
     ).update({"is_read": True}, synchronize_session=False)
     db.commit()
@@ -108,8 +126,6 @@ def clear_all_notifications(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    deleted_count = db.query(Notification).filter(
-        Notification.receiver_id == current_user.id
-    ).delete(synchronize_session=False)
+    deleted_count = notification_feed_query(db, current_user.id).delete(synchronize_session=False)
     db.commit()
     return {"detail": "已全部清除", "deleted_count": deleted_count}

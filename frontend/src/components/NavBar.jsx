@@ -34,10 +34,11 @@ function NavBar() {
         let disposed = false;
         const fetchUnread = async () => {
             try {
-                const [notificationData, conversations, groups] = await Promise.all([
+                const [notificationData, conversations, groups, groupInvites] = await Promise.all([
                     postService.getUnreadNotificationsCount(),
                     messageService.getConversations(),
                     messageService.getGroups(),
+                    messageService.getGroupInvites(),
                 ]);
                 if (disposed) return;
                 const mutedGroupIds = new Set(getMutedGroupIds());
@@ -45,8 +46,9 @@ function NavBar() {
                 const groupUnreadCount = groups.reduce((sum, item) => (
                     mutedGroupIds.has(item.id) ? sum : sum + (item.unread_count || 0)
                 ), 0);
-                setUnreadCount(notificationData.unread_count || 0);
-                setUnreadMessagesCount(privateUnreadCount + groupUnreadCount);
+                const groupInviteCount = groupInvites.length;
+                setUnreadCount((notificationData.unread_count || 0) + groupInviteCount);
+                setUnreadMessagesCount(privateUnreadCount + groupUnreadCount + groupInviteCount);
             } catch (e) {
                 // Keep the current badge values if refresh fails.
             }
