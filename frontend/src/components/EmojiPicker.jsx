@@ -24,6 +24,10 @@ const EMOJIS = [
     { name: '黄符-威胁', file: '黄符-威胁.png' },
     { name: '黄符-抱抱', file: '黄符-抱抱.png' },
     { name: '黄符-累趴', file: '黄符-累趴.png' },
+    { name: '绝望的小蛋黄', file: '绝望的小蛋黄.jpg' },
+    { name: '酒哥儿-无奈', file: '酒哥儿-无奈.png' },
+    { name: '酒哥儿-点赞', file: '酒哥儿-点赞.png' },
+    { name: '酒哥儿-送花', file: '酒哥儿-送花.png' },
 ];
 
 function EmojiPicker({ onSelect }) {
@@ -31,16 +35,17 @@ function EmojiPicker({ onSelect }) {
     const pickerRef = useRef(null);
     const { t } = useLang();
 
-    // 点击外部关闭面板
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (pickerRef.current && !pickerRef.current.contains(e.target)) {
                 setOpen(false);
             }
         };
+
         if (open) {
             document.addEventListener('mousedown', handleClickOutside);
         }
+
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [open]);
 
