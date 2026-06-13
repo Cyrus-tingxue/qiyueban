@@ -59,6 +59,8 @@ def init_db():
         pass
 
     for statement in (
+        "ALTER TABLE users ADD COLUMN is_banned BOOLEAN DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN banned_reason VARCHAR(500)",
         "ALTER TABLE users ADD COLUMN email VARCHAR(255)",
         "ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT 0",
         "ALTER TABLE users ADD COLUMN pending_email VARCHAR(255)",
@@ -80,6 +82,18 @@ def init_db():
             conn.execute(text("ALTER TABLE posts ADD COLUMN image_url VARCHAR(500)"))
     except Exception:
         pass
+
+    for statement in (
+        "ALTER TABLE posts ADD COLUMN is_grave BOOLEAN DEFAULT 0",
+        "ALTER TABLE posts ADD COLUMN grave_at DATETIME",
+        "ALTER TABLE posts ADD COLUMN grave_by_id INTEGER REFERENCES users(id)",
+        "CREATE INDEX IF NOT EXISTS ix_posts_is_grave ON posts(is_grave)",
+    ):
+        try:
+            with engine.begin() as conn:
+                conn.execute(text(statement))
+        except Exception:
+            pass
 
     try:
         with engine.begin() as conn:
@@ -153,6 +167,11 @@ def apply_postgres_column_expansions(target_engine):
         'ALTER TABLE users ALTER COLUMN nickname TYPE VARCHAR(255)',
         'ALTER TABLE posts ALTER COLUMN title TYPE VARCHAR(500)',
         'ALTER TABLE posts ALTER COLUMN author_name TYPE VARCHAR(255)',
+        'ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_grave BOOLEAN DEFAULT FALSE',
+        'ALTER TABLE posts ADD COLUMN IF NOT EXISTS grave_at TIMESTAMP',
+        'ALTER TABLE posts ADD COLUMN IF NOT EXISTS grave_by_id INTEGER REFERENCES users(id)',
+        'ALTER TABLE users ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT FALSE',
+        'ALTER TABLE users ADD COLUMN IF NOT EXISTS banned_reason VARCHAR(500)',
         'ALTER TABLE replies ALTER COLUMN author_name TYPE VARCHAR(255)',
         'ALTER TABLE replies ALTER COLUMN reply_to_username TYPE VARCHAR(255)',
         'ALTER TABLE notifications ALTER COLUMN sender_name TYPE VARCHAR(255)',

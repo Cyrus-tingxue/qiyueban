@@ -6,7 +6,7 @@ const zh = {
     // NavBar
     navLatest: '最新',
     navFeatured: '精品',
-    navLive: '语c',
+    navLive: '语C',
     navOC: 'OC',
     navMy: '我的',
     navChat: '私聊',
@@ -24,8 +24,8 @@ const zh = {
     nicknamePlaceholder: '请输入昵称（可选）',
     chooseAvatar: '选择一个头像：',
     processing: '处理中...',
-    register: '注　册',
-    loginBtn: '登　录',
+    register: '注册',
+    loginBtn: '登录',
     backToLogin: '返回登录',
     registerAccount: '注册账号',
     forgotPassword: '忘记密码',
@@ -52,20 +52,20 @@ const zh = {
     likes: '赞',
 
     // PostDetailPage
-    back: '← 返回',
+    back: '< 返回',
     postNotExist: '帖子不存在',
     publishedAt: '发布于：',
     replyCount: '回复',
-    sendMessage: '✉️ 私信',
-    liked: '❤️ 已赞',
-    like: '🤍 点赞',
+    sendMessage: '私信',
+    liked: '已赞',
+    like: '点赞',
     deletePost: '删除帖子',
     deletePostConfirm: '确定要删除这篇帖子吗？删除后不可恢复。',
     deleteFailed: '删除失败',
     loginToLike: '请先登录才能点赞',
     operationFailed: '操作失败',
     replySection: '回帖',
-    noReplies: '还没有回帖，来抢沙发吧～',
+    noReplies: '还没有回帖，来抢沙发吧！',
     comment: '评论',
     deleteReply: '删除',
     deleteReplyConfirm: '确定要删除这条回帖吗？删除后不可恢复。',
@@ -106,16 +106,16 @@ const zh = {
     catParanormal: '灵异',
     catHelp: '求助',
     catShare: '分享',
-    catLive: '语c',
+    catLive: '语C',
     catOC: 'OC',
 
     // ChatPage
     backToMessages: '< 返回',
-    chattingWith: '与用户 {id} 聊天中',
+    chattingWith: '正在与用户 {id} 聊天',
     clearHistory: '清空',
-    clearConfirm: '确定要永久清空与该用户的聊天记录吗？此操作不可逆。',
+    clearConfirm: '确定要永久清空与该用户的聊天记录吗？此操作不可撤销。',
     clearFailed: '清空失败，请稍后重试。',
-    sayHello: '打个招呼吧～',
+    sayHello: '打个招呼吧！',
     chatPlaceholder: '输入消息',
     send: '发送',
     loadingChat: '加载聊天记录中...',
@@ -130,7 +130,7 @@ const zh = {
     deleteConvConfirm: '确定要删除与该用户的所有记录吗？这会同时清空双方的聊天内容。',
     deleteConvFailed: '删除失败，请稍后重试。',
     loadConvFailed: '无法加载会话列表',
-    me: '我: ',
+    me: '我：',
 
     // MyPage
     myNotifications: '我的消息',
@@ -164,7 +164,7 @@ const zh = {
     oldPasswordPlaceholder: '请输入当前密码',
     newPasswordPlaceholder: '请输入新密码',
     confirmPasswordPlaceholder: '再次输入新密码',
-    passwordMinLength: '新密码至少4个字符',
+    passwordMinLength: '新密码至少 4 个字符',
     passwordMismatch: '两次输入的新密码不一致',
     passwordChanged: '密码修改成功！',
     changeFailed: '修改失败，请稍后再试',
@@ -172,10 +172,10 @@ const zh = {
     confirmChange: '确认修改',
 
     // HomePage
-    searchResults: '搜索结果: ',
+    searchResults: '搜索结果：',
 
     // Language
-    langSwitch: '中/EN',
+    langSwitch: '中 / EN',
 
     // LoginPage (standalone)
     usernameLabel: '用户名',
@@ -198,7 +198,7 @@ const zh = {
     nextSong: '下一首随机播放',
 
     // InviteGate
-    inviteSubtitle: '请联系Telegram：@CyrusOliver，输入邀请码：',
+    inviteSubtitle: '请联系 Telegram：@CyrusOliver，输入邀请码：',
     invitePlaceholder: '邀请码',
     inviteEmpty: '请输入邀请码',
     inviteFailed: '验证失败',
@@ -208,6 +208,30 @@ const zh = {
     // ErrorBoundary
     pageError: '页面出错了',
     reload: '重新加载',
+    onlineNow: '当前在线',
+    lastSeen: '最后在线',
+    inviteFriendToGroup: '邀请好友加入群组',
+    invite: '邀请',
+    findFriends: '查找好友',
+    addFriend: '加好友',
+    friendRequests: '好友申请',
+    noFriendRequests: '暂无待处理申请',
+    wantsToBeFriend: '想添加你为好友',
+    friendRequestSent: '申请已发送',
+    friendRequestPendingYou: '等待你处理',
+    accept: '接受',
+    reject: '拒绝',
+    friends: '好友',
+    noFriendsYet: '暂无好友',
+    createGroup: '创建群组',
+    groupNamePlaceholder: '群组名称',
+    groupNeedsFriends: '请先添加好友，然后才能邀请他们加入群组。',
+    groupDirectory: '群组',
+    members: '成员',
+    joinGroup: '加入',
+    enterGroup: '打开',
+    noGroupsYet: '暂无群组',
+    recentPrivateChats: '最近私聊',
 };
 
 export default zh;

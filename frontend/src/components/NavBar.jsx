@@ -9,20 +9,25 @@ import { getMutedGroupIds } from '../utils/groupMute';
 import './NavBar.css';
 
 const UNREAD_REFRESH_MS = 3000;
+
 function NavBar() {
-    const { isLoggedIn } = useAuth();
+    const { isLoggedIn, user } = useAuth();
     const { t } = useLang();
     const [unreadCount, setUnreadCount] = useState(0);
     const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
 
     const navItems = [
-        { key: 'navLatest', path: '/', icon: '馃敟' },
-        { key: 'navFeatured', path: '/featured', icon: '鉁?' },
-        { key: 'navLive', path: '/live', icon: '馃幁' },
-        { key: 'navOC', path: '/oc', icon: '馃帹' },
-        { key: 'navMy', path: '/my', icon: '馃懁' },
-        { key: 'navChat', path: '/messages', icon: '馃挰' },
+        { key: 'navLatest', path: '/', icon: 'new' },
+        { key: 'navFeatured', path: '/featured', icon: 'hot' },
+        { key: 'navLive', path: '/live', icon: 'live' },
+        { key: 'navOC', path: '/oc', icon: 'oc' },
+        { key: 'navMy', path: '/my', icon: 'my' },
+        { key: 'navChat', path: '/messages', icon: 'chat' },
     ];
+
+    if (user?.is_admin) {
+        navItems.push({ key: 'navAdmin', path: '/admin', label: '管理', icon: 'admin' });
+    }
 
     useEffect(() => {
         if (!isLoggedIn) {
@@ -102,7 +107,7 @@ function NavBar() {
                     to={item.path}
                     className={({ isActive }) => `navbar-item ${isActive ? 'active' : ''}`}
                 >
-                    <span className="navbar-label">{t(item.key)}</span>
+                    <span className="navbar-label">{item.label || t(item.key)}</span>
 
                     {item.key === 'navMy' && unreadCount > 0 && (
                         <span className="nav-unread-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>

@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage';
 import PostDetailPage from './pages/PostDetailPage';
 import CreatePostPage from './pages/CreatePostPage';
 import MyPage from './pages/MyPage';
+import AdminPage from './pages/AdminPage';
 import MessagesPage from './pages/MessagesPage';
 import ChatPage from './pages/ChatPage';
 import LoginPage from './pages/LoginPage';
@@ -53,6 +54,7 @@ function App() {
                   <Route path="live" element={<HomePage />} />
                   <Route path="oc" element={<HomePage />} />
                   <Route path="my" element={<MyPage />} />
+                  <Route path="admin" element={<AdminPage />} />
                   <Route path="chat" element={<HomePage />} />
                   <Route path="post/:id" element={<PostDetailPage />} />
                   <Route path="create-post" element={<CreatePostPage />} />

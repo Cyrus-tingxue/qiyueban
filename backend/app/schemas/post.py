@@ -28,6 +28,7 @@ class PostResponse(BaseModel):
     reply_count: int
     like_count: int = 0
     is_liked: bool = False
+    is_grave: bool = False
     created_at: str
 
     class Config:
@@ -71,6 +72,24 @@ class ReplyResponse(BaseModel):
     reply_to_id: Optional[int] = None
     reply_to_user_id: Optional[int] = None
     reply_to_username: Optional[str] = None
+    created_at: str
+
+    class Config:
+        from_attributes = True
+
+
+class GraveRequestCreate(BaseModel):
+    reason: Optional[str] = None
+
+
+class GraveRequestResponse(BaseModel):
+    id: int
+    post_id: int
+    post_title: str = ""
+    requester_id: int
+    requester_name: str
+    reason: Optional[str] = None
+    status: str
     created_at: str
 
     class Config:

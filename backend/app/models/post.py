@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, UniqueConstraint, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from ..database import Base
@@ -25,6 +25,9 @@ class Post(Base):
     author_name = Column(String(255), nullable=False)
     reply_count = Column(Integer, default=0)
     like_count = Column(Integer, default=0)
+    is_grave = Column(Boolean, default=False, index=True)
+    grave_at = Column(DateTime, nullable=True)
+    grave_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -73,4 +76,22 @@ class ReplyLike(Base):
 
     __table_args__ = (
         UniqueConstraint('user_id', 'reply_id', name='uq_user_reply_like'),
+    )
+
+
+class GraveRequest(Base):
+    __tablename__ = "grave_requests"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    post_id = Column(Integer, ForeignKey("posts.id", ondelete="CASCADE"), nullable=False, index=True)
+    requester_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    requester_name = Column(String(255), nullable=False)
+    reason = Column(Text, nullable=True)
+    status = Column(String(20), default="pending", nullable=False, index=True)
+    reviewed_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    __table_args__ = (
+        UniqueConstraint('post_id', 'requester_id', 'status', name='uq_grave_request_status'),
     )

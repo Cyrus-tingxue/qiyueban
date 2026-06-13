@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 from sqlalchemy import Integer, case, cast, func, or_
-from ..models.post import Post, Category, Reply, Like, ReplyLike
+from ..models.post import Post, Category, Reply, Like, ReplyLike, GraveRequest
 from ..models.user import User
 
 
@@ -172,6 +172,19 @@ def get_replies(db: Session, post_id: int):
 import re
 from ..models.notification import Notification
 
+
+def notify_admins_about_grave_request(db: Session, request: GraveRequest, requester_id: int, requester_name: str):
+    admins = db.query(User).filter(User.is_admin.is_(True), User.id != requester_id).all()
+    for admin in admins:
+        db.add(Notification(
+            receiver_id=admin.id,
+            sender_id=requester_id,
+            sender_name=requester_name,
+            type="grave_request",
+            target_id=request.id,
+            post_id=request.post_id,
+        ))
+
 def create_reply(
     db: Session, 
     post_id: int, 
@@ -184,6 +197,10 @@ def create_reply(
     image_url: str = None,
 ):
     """创建回复并触发相关通知"""
+    post = db.query(Post).filter(Post.id == post_id).first()
+    if not post or post.is_grave:
+        return None
+
     reply = Reply(
         content=content,
         post_id=post_id,
@@ -196,9 +213,7 @@ def create_reply(
     )
     db.add(reply)
     # 递增帖子回复数
-    post = db.query(Post).filter(Post.id == post_id).first()
-    if post:
-        post.reply_count = (post.reply_count or 0) + 1
+    post.reply_count = (post.reply_count or 0) + 1
     db.commit()
     db.refresh(reply)
 
@@ -273,6 +288,95 @@ def is_post_liked_by_user(db: Session, post_id: int, user_id: int) -> bool:
     if not user_id:
         return False
     return db.query(Like).filter(Like.post_id == post_id, Like.user_id == user_id).first() is not None
+
+
+def create_grave_request(db: Session, post_id: int, requester_id: int, requester_name: str, reason: str | None = None):
+    post = db.query(Post).filter(Post.id == post_id).first()
+    if not post:
+        return None
+    existing = (
+        db.query(GraveRequest)
+        .filter(
+            GraveRequest.post_id == post_id,
+            GraveRequest.requester_id == requester_id,
+            GraveRequest.status == "pending",
+        )
+        .first()
+    )
+    if existing:
+        return existing
+    request = GraveRequest(
+        post_id=post_id,
+        requester_id=requester_id,
+        requester_name=requester_name,
+        reason=reason,
+    )
+    db.add(request)
+    db.commit()
+    db.refresh(request)
+    requester = db.query(User).filter(User.id == requester_id).first()
+    if not getattr(requester, "is_admin", False):
+        notify_admins_about_grave_request(db, request, requester_id, requester_name)
+        db.commit()
+    return request
+
+
+def get_grave_requests(db: Session, status: str = "pending"):
+    query = db.query(GraveRequest)
+    if status and status != "all":
+        query = query.filter(GraveRequest.status == status)
+    return query.order_by(GraveRequest.created_at.desc()).all()
+
+
+def review_grave_request(db: Session, request_id: int, reviewer_id: int, approve: bool):
+    request = db.query(GraveRequest).filter(GraveRequest.id == request_id).first()
+    if not request:
+        return None
+    if request.status != "pending":
+        return request
+    request.status = "approved" if approve else "rejected"
+    request.reviewed_by_id = reviewer_id
+    request.reviewed_at = datetime.now(timezone.utc)
+    if approve:
+        post = db.query(Post).filter(Post.id == request.post_id).first()
+        if post:
+            reviewer = db.query(User).filter(User.id == reviewer_id).first()
+            reply = Reply(
+                content="由于未知原因，此帖子不可回复。",
+                post_id=post.id,
+                author_id=reviewer_id,
+                author_name=reviewer.nickname if reviewer else "管理员",
+            )
+            db.add(reply)
+            post.reply_count = (post.reply_count or 0) + 1
+            post.is_grave = True
+            post.grave_at = request.reviewed_at
+            post.grave_by_id = reviewer_id
+    db.commit()
+    db.refresh(request)
+    return request
+
+
+def set_post_grave(db: Session, post_id: int, reviewer_id: int, is_grave: bool = True):
+    post = db.query(Post).filter(Post.id == post_id).first()
+    if not post:
+        return None
+    if is_grave and not post.is_grave:
+        reviewer = db.query(User).filter(User.id == reviewer_id).first()
+        reply = Reply(
+            content="由于未知原因，此帖子不可回复。",
+            post_id=post.id,
+            author_id=reviewer_id,
+            author_name=reviewer.nickname if reviewer else "管理员",
+        )
+        db.add(reply)
+        post.reply_count = (post.reply_count or 0) + 1
+    post.is_grave = is_grave
+    post.grave_at = datetime.now(timezone.utc) if is_grave else None
+    post.grave_by_id = reviewer_id if is_grave else None
+    db.commit()
+    db.refresh(post)
+    return post
 
 
 def delete_reply(db: Session, reply_id: int):

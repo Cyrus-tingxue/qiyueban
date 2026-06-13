@@ -44,6 +44,7 @@ function PostItem({ post, index = 0 }) {
             <div className="post-item-content">
                 <div className="post-item-title">
                     <span className="post-item-category">【{categoryLabel}】</span>
+                    {post.is_grave && <span className="post-item-grave">坟贴</span>}
                     <span className="post-item-text">{post.title}</span>
                 </div>
                 {post.image_url && (

@@ -9,12 +9,16 @@ from sqlalchemy.orm import Session
 from ..config import SMTP_HOST
 from ..database import get_db
 from ..dependencies import get_current_user
+from ..models.moderation import IpBan
 from ..models.user import User
 from ..schemas.user import (
+    BanUserRequest,
     BindEmail,
     ChangePassword,
     ConfirmEmail,
     ForgotPassword,
+    IpBanCreate,
+    IpBanResponse,
     ResetPassword,
     TokenResponse,
     UserCreate,
@@ -51,8 +55,19 @@ def to_user_response(user: User) -> UserResponse:
         nickname=user.nickname,
         avatar=user.avatar or "",
         is_admin=user.is_admin or False,
+        is_banned=user.is_banned or False,
+        banned_reason=user.banned_reason,
         email=user.email if user.email_verified else None,
     )
+
+
+def require_admin(user: User):
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="Only admins can do this")
+
+
+def format_datetime(dt):
+    return dt.strftime("%Y-%m-%d %H:%M") if dt else ""
 
 
 def send_email_verification_code_task(email: str, code: str):
@@ -126,6 +141,8 @@ def login(request: Request, data: UserLogin, db: Session = Depends(get_db)):
     user = authenticate_user(db, data.username, data.password)
     if not user:
         raise HTTPException(status_code=401, detail="用户名或密码错误")
+    if user.is_banned:
+        raise HTTPException(status_code=403, detail="该账号已被封禁，请联系管理员。")
 
     token = create_access_token(user.id)
     return TokenResponse(token=token, user=to_user_response(user))
@@ -254,3 +271,120 @@ def search(
 ):
     users = search_users(db, q, limit)
     return [to_user_response(u) for u in users]
+
+
+def apply_user_ban(db: Session, user: User, current_user: User, reason: str | None):
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="不能封禁自己")
+    if user.is_admin:
+        raise HTTPException(status_code=400, detail="不能封禁管理员")
+    user.is_banned = True
+    user.banned_reason = reason or "账号已被封禁，请联系管理员。"
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.post("/admin/users/{user_id}/ban", response_model=UserResponse)
+def ban_user(
+    user_id: int,
+    data: BanUserRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    require_admin(current_user)
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    return to_user_response(apply_user_ban(db, user, current_user, data.reason))
+
+
+@router.post("/admin/users/ban-by-username", response_model=UserResponse)
+def ban_user_by_username(
+    data: BanUserRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    require_admin(current_user)
+    username = (data.username or "").strip()
+    if not username:
+        raise HTTPException(status_code=400, detail="用户名不能为空")
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    return to_user_response(apply_user_ban(db, user, current_user, data.reason))
+
+
+@router.post("/admin/users/{user_id}/unban", response_model=UserResponse)
+def unban_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    require_admin(current_user)
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    user.is_banned = False
+    user.banned_reason = None
+    db.commit()
+    db.refresh(user)
+    return to_user_response(user)
+
+
+@router.get("/admin/ip-bans", response_model=List[IpBanResponse])
+def list_ip_bans(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    require_admin(current_user)
+    bans = db.query(IpBan).order_by(IpBan.created_at.desc()).all()
+    return [
+        IpBanResponse(
+            id=ban.id,
+            ip_address=ban.ip_address,
+            reason=ban.reason,
+            created_at=format_datetime(ban.created_at),
+        )
+        for ban in bans
+    ]
+
+
+@router.post("/admin/ip-bans", response_model=IpBanResponse)
+def create_ip_ban(
+    data: IpBanCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    require_admin(current_user)
+    ip_address = data.ip_address.strip()
+    if not ip_address:
+        raise HTTPException(status_code=400, detail="IP 不能为空")
+    ban = db.query(IpBan).filter(IpBan.ip_address == ip_address).first()
+    if not ban:
+        ban = IpBan(ip_address=ip_address, created_by_id=current_user.id)
+        db.add(ban)
+    ban.reason = data.reason
+    db.commit()
+    db.refresh(ban)
+    return IpBanResponse(
+        id=ban.id,
+        ip_address=ban.ip_address,
+        reason=ban.reason,
+        created_at=format_datetime(ban.created_at),
+    )
+
+
+@router.delete("/admin/ip-bans/{ban_id}")
+def delete_ip_ban(
+    ban_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    require_admin(current_user)
+    ban = db.query(IpBan).filter(IpBan.id == ban_id).first()
+    if not ban:
+        raise HTTPException(status_code=404, detail="IP 封禁不存在")
+    db.delete(ban)
+    db.commit()
+    return {"detail": "解除 IP 封禁成功"}

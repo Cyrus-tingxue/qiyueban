@@ -1,0 +1,40 @@
+.admin-page {
+    max-width: 760px;
+}
+
+.admin-title-row {
+    align-items: center;
+    border-bottom: 2px solid var(--color-bg-secondary);
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+}
+
+.admin-title-row h2 {
+    color: var(--color-accent-bright);
+    font-family: var(--font-serif);
+    margin: 0;
+}
+
+.admin-global-message {
+    margin-bottom: 16px;
+}
+
+.admin-panel-first {
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0;
+}
+
+@media (max-width: 640px) {
+    .admin-title-row,
+    .my-admin-item {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .my-admin-actions {
+        justify-content: flex-start;
+    }
+}

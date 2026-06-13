@@ -128,6 +128,36 @@
     filter: brightness(1.2);
 }
 
+.post-grave-btn {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    background: transparent;
+    border: 1px solid var(--color-border-dim);
+    transition: all var(--transition-fast);
+}
+
+.post-grave-btn:hover {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    background: rgba(196, 43, 43, 0.1);
+}
+
+.post-grave-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.grave-post-notice {
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-md);
+    color: var(--color-accent-bright);
+    background: rgba(196, 43, 43, 0.08);
+    border: 1px solid var(--color-border-dim);
+    text-align: center;
+    font-weight: 700;
+}
+
 .send-message-btn {
     background: transparent;
     border: 1px solid var(--primary-color);

@@ -42,6 +42,9 @@ def get_current_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户不存在")
 
+    if user.is_banned:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=user.banned_reason or "账号已被封禁")
+
     touch_user_last_seen(db, user)
     return user
 
@@ -59,6 +62,8 @@ def get_optional_user(
         return None
 
     user = db.query(User).filter(User.id == user_id).first()
+    if user and user.is_banned:
+        return None
     if user:
         touch_user_last_seen(db, user)
     return user

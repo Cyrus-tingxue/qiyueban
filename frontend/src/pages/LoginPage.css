@@ -82,6 +82,17 @@
     text-align: center;
 }
 
+.login-appeal-link {
+    align-self: center;
+    color: var(--color-accent);
+    font-size: 0.9rem;
+    text-decoration: underline;
+}
+
+.login-appeal-link:hover {
+    color: var(--color-accent-bright);
+}
+
 .login-success {
     color: #68d391;
     font-size: 0.85rem;

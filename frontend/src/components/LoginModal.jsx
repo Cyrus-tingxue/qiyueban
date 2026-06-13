@@ -5,6 +5,8 @@ import { authService } from '../services/authService';
 import AvatarIcon from './AvatarIcon';
 import './LoginModal.css';
 
+const APPEAL_URL = 'https://t.me/CyrusOliver';
+
 function LoginModal({ onClose }) {
     const [mode, setMode] = useState('login');
     const [username, setUsername] = useState('');
@@ -17,6 +19,7 @@ function LoginModal({ onClose }) {
     const [resetCodeSent, setResetCodeSent] = useState(false);
     const [avatar, setAvatar] = useState('eye');
     const [error, setError] = useState('');
+    const [showAppeal, setShowAppeal] = useState(false);
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
@@ -28,6 +31,7 @@ function LoginModal({ onClose }) {
     const switchMode = (nextMode) => {
         setMode(nextMode);
         setError('');
+        setShowAppeal(false);
         setMessage('');
         setResetCode('');
         setResetPassword('');
@@ -38,6 +42,7 @@ function LoginModal({ onClose }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setShowAppeal(false);
         setMessage('');
         setLoading(true);
         try {
@@ -70,6 +75,7 @@ function LoginModal({ onClose }) {
             login(data.user, data.token);
             onClose();
         } catch (err) {
+            setShowAppeal(!isForgot && !isRegister && err.response?.status === 403);
             setError(err.response?.data?.detail || t('loginFailed'));
         } finally {
             setLoading(false);
@@ -194,6 +200,11 @@ function LoginModal({ onClose }) {
                         )}
 
                         {error && <div className="login-modal-error">{error}</div>}
+                        {showAppeal && (
+                            <a className="login-modal-appeal-link" href={APPEAL_URL} target="_blank" rel="noreferrer">
+                                账号申诉
+                            </a>
+                        )}
                         {message && <div className="login-modal-success">{message}</div>}
 
                         <button className="login-modal-submit" type="submit" disabled={loading}>

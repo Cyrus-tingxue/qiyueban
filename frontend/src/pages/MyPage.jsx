@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { postService } from '../services/postService';
 import { authService } from '../services/authService';
-import { announcementService } from '../services/announcementService';
 import { messageService } from '../services/messageService';
 import { useAuth } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LanguageContext';
@@ -24,11 +23,6 @@ function MyPage() {
     const [emailError, setEmailError] = useState('');
     const [emailSuccess, setEmailSuccess] = useState('');
     const [emailLoading, setEmailLoading] = useState(false);
-    const [announcementDraft, setAnnouncementDraft] = useState('');
-    const [announcementLoading, setAnnouncementLoading] = useState(false);
-    const [announcementSaving, setAnnouncementSaving] = useState(false);
-    const [announcementError, setAnnouncementError] = useState('');
-    const [announcementSuccess, setAnnouncementSuccess] = useState('');
 
     const [notifications, setNotifications] = useState([]);
     const [groupInvites, setGroupInvites] = useState([]);
@@ -56,13 +50,6 @@ function MyPage() {
         setEmail(user?.email || '');
     }, [user?.email]);
 
-    useEffect(() => {
-        if (!isLoggedIn || !user?.is_admin || activeTab !== 'account') {
-            return;
-        }
-        loadAnnouncement();
-    }, [isLoggedIn, user?.is_admin, activeTab]);
-
     const loadNotifications = async () => {
         setNotifLoading(true);
         try {
@@ -73,7 +60,7 @@ function MyPage() {
             setNotifications(data.items || []);
             setGroupInvites(inviteData || []);
         } catch (e) {
-            console.error("加载消息失败", e);
+            console.error('Failed to load notifications', e);
         } finally {
             setNotifLoading(false);
         }
@@ -83,7 +70,7 @@ function MyPage() {
         if (!user || user.uid === undefined) return;
         setPostsLoading(true);
         try {
-            const data = await postService.getPosts(page, pageSize, null, 'newest', null, user?.uid);
+            const data = await postService.getPosts(page, pageSize, null, 'newest', null, user.uid);
             setPosts(data.items || []);
             setTotalPages(data.total_pages || 1);
         } catch (e) {
@@ -96,7 +83,7 @@ function MyPage() {
 
     const handleReadAll = async () => {
         try {
-            setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+            setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
             window.dispatchEvent(new CustomEvent('notificationRead', { detail: { action: 'readAll' } }));
             await postService.readAllNotifications();
         } catch (e) {
@@ -140,9 +127,8 @@ function MyPage() {
     const handleNotificationClick = async (notif) => {
         if (!notif.is_read) {
             try {
-                setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n));
+                setNotifications((prev) => prev.map((n) => (n.id === notif.id ? { ...n, is_read: true } : n)));
                 window.dispatchEvent(new CustomEvent('notificationRead', { detail: { action: 'readOne' } }));
-
                 await postService.readNotification(notif.id);
             } catch (e) { }
         }
@@ -150,9 +136,21 @@ function MyPage() {
             navigate('/messages');
             return;
         }
+        if (notif.type === 'grave_request') {
+            navigate('/admin');
+            return;
+        }
         if (notif.post_id) {
             navigate(`/post/${notif.post_id}`);
         }
+    };
+
+    const getNotificationText = (notif) => {
+        if (notif.type === 'friend_request') return ' 申请添加你为好友';
+        if (notif.type === 'reply_mention') return ' 回复并提到了你';
+        if (notif.type === 'reply') return t('repliedYou');
+        if (notif.type === 'grave_request') return ' 提交了坟贴申请';
+        return t('mentionedYou');
     };
 
     const handleBindEmail = async (e) => {
@@ -179,35 +177,6 @@ function MyPage() {
             setEmailError(err.response?.data?.detail || t('emailBindFailed'));
         } finally {
             setEmailLoading(false);
-        }
-    };
-
-    const loadAnnouncement = async () => {
-        setAnnouncementLoading(true);
-        setAnnouncementError('');
-        try {
-            const data = await announcementService.getAnnouncement();
-            setAnnouncementDraft(data.content || '');
-        } catch (err) {
-            setAnnouncementError(err.response?.data?.detail || '公告加载失败');
-        } finally {
-            setAnnouncementLoading(false);
-        }
-    };
-
-    const handleAnnouncementSave = async (e) => {
-        e.preventDefault();
-        setAnnouncementSaving(true);
-        setAnnouncementError('');
-        setAnnouncementSuccess('');
-        try {
-            const data = await announcementService.updateAnnouncement(announcementDraft);
-            setAnnouncementDraft(data.content || '');
-            setAnnouncementSuccess('公告已更新');
-        } catch (err) {
-            setAnnouncementError(err.response?.data?.detail || '公告保存失败');
-        } finally {
-            setAnnouncementSaving(false);
         }
     };
 
@@ -284,7 +253,7 @@ function MyPage() {
                                         </div>
                                     </div>
                                 ))}
-                                {notifications.map(notif => (
+                                {notifications.map((notif) => (
                                     <div
                                         key={notif.id}
                                         className={`my-notif-item ${notif.is_read ? 'read' : 'unread'}`}
@@ -296,13 +265,7 @@ function MyPage() {
                                         <div className="my-notif-body">
                                             <p>
                                                 <span className="my-notif-sender">{notif.sender_name || t('someone')}</span>
-                                                {notif.type === 'friend_request'
-                                                    ? ' 申请添加你为好友'
-                                                    : notif.type === 'reply_mention'
-                                                        ? ' 回复并提到了你'
-                                                        : notif.type === 'reply'
-                                                            ? t('repliedYou')
-                                                            : t('mentionedYou')}
+                                                {getNotificationText(notif)}
                                             </p>
                                             <span className="my-notif-time">{notif.created_at}</span>
                                         </div>
@@ -381,35 +344,6 @@ function MyPage() {
                                 {emailLoading ? t('submitting') : (emailCodeSent ? t('confirmBindEmail') : t('sendVerificationCode'))}
                             </button>
                         </form>
-
-                        {user?.is_admin && (
-                            <div className="my-admin-section">
-                                <div className="my-notif-header">
-                                    <h3>公告管理</h3>
-                                </div>
-                                <form className="my-account-form" onSubmit={handleAnnouncementSave}>
-                                    <div className="my-account-field">
-                                        <label>论坛公告内容</label>
-                                        <textarea
-                                            className="my-admin-textarea"
-                                            value={announcementDraft}
-                                            onChange={(e) => setAnnouncementDraft(e.target.value)}
-                                            placeholder="请输入论坛公告内容"
-                                            disabled={announcementLoading || announcementSaving}
-                                        />
-                                    </div>
-                                    {announcementError && <div className="my-account-error">{announcementError}</div>}
-                                    {announcementSuccess && <div className="my-account-success">{announcementSuccess}</div>}
-                                    <button
-                                        className="read-all-btn my-account-submit"
-                                        type="submit"
-                                        disabled={announcementLoading || announcementSaving}
-                                    >
-                                        {announcementLoading ? '加载中...' : (announcementSaving ? '保存中...' : '保存公告')}
-                                    </button>
-                                </form>
-                            </div>
-                        )}
                     </div>
                 )}
             </div>

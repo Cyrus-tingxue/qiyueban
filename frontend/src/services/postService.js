@@ -54,6 +54,31 @@ export const postService = {
         return response.data;
     },
 
+    async requestGravePost(postId, reason = '') {
+        const response = await api.post(`/posts/${postId}/grave-requests`, { reason });
+        return response.data;
+    },
+
+    async getGraveRequests(status = 'pending') {
+        const response = await api.get('/grave-requests', { params: { status } });
+        return response.data;
+    },
+
+    async approveGraveRequest(requestId) {
+        const response = await api.post(`/grave-requests/${requestId}/approve`);
+        return response.data;
+    },
+
+    async rejectGraveRequest(requestId) {
+        const response = await api.post(`/grave-requests/${requestId}/reject`);
+        return response.data;
+    },
+
+    async markPostGrave(postId) {
+        const response = await api.post(`/posts/${postId}/grave`);
+        return response.data;
+    },
+
     async checkLike(postId) {
         const response = await api.get(`/posts/${postId}/like`);
         return response.data;

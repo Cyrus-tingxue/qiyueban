@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from fastapi.staticfiles import StaticFiles
@@ -8,6 +9,7 @@ from .config import CORS_ORIGINS
 from .database import init_db, SessionLocal
 from .routers import announcement, auth, posts, notifications, messages, uploads
 from .services.post import init_categories
+from .models.moderation import IpBan
 import os
 
 # 从 X-Forwarded-For 中获取真实 IP，回退到 remote_address
@@ -32,6 +34,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def block_banned_ips(request, call_next):
+    client_ip = get_real_ip(request)
+    db = SessionLocal()
+    try:
+        banned = db.query(IpBan).filter(IpBan.ip_address == client_ip).first()
+    except Exception:
+        banned = None
+    finally:
+        db.close()
+    if banned:
+        return JSONResponse(status_code=403, content={"detail": banned.reason or "IP 已被封禁"})
+    return await call_next(request)
 
 # 静态文件挂载 (用于图片上传后的分发)
 os.makedirs("/app/data/uploads", exist_ok=True)

@@ -6,6 +6,8 @@ import { authService } from '../services/authService';
 import AvatarIcon from '../components/AvatarIcon';
 import './LoginPage.css';
 
+const APPEAL_URL = 'https://t.me/CyrusOliver';
+
 function LoginPage() {
     const [mode, setMode] = useState('login');
     const [username, setUsername] = useState('');
@@ -18,6 +20,7 @@ function LoginPage() {
     const [resetCodeSent, setResetCodeSent] = useState(false);
     const [avatar, setAvatar] = useState('eye');
     const [error, setError] = useState('');
+    const [showAppeal, setShowAppeal] = useState(false);
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
@@ -30,6 +33,7 @@ function LoginPage() {
     const switchMode = (nextMode) => {
         setMode(nextMode);
         setError('');
+        setShowAppeal(false);
         setMessage('');
         setResetCode('');
         setResetPassword('');
@@ -40,6 +44,7 @@ function LoginPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setShowAppeal(false);
         setMessage('');
         setLoading(true);
 
@@ -73,6 +78,7 @@ function LoginPage() {
             login(data.user, data.token);
             navigate('/');
         } catch (err) {
+            setShowAppeal(!isForgot && !isRegister && err.response?.status === 403);
             setError(err.response?.data?.detail || t('loginFailed'));
         } finally {
             setLoading(false);
@@ -200,6 +206,11 @@ function LoginPage() {
                     )}
 
                     {error && <div className="login-error">{error}</div>}
+                    {showAppeal && (
+                        <a className="login-appeal-link" href={APPEAL_URL} target="_blank" rel="noreferrer">
+                            账号申诉
+                        </a>
+                    )}
                     {message && <div className="login-success">{message}</div>}
                     <button className="login-submit" type="submit" disabled={loading}>
                         {loading ? t('processing') : (isForgot ? (resetCodeSent ? t('confirmReset') : t('sendResetCode')) : (isRegister ? t('register') : t('loginBtn')))}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { postService } from '../services/postService';
 import { messageService } from '../services/messageService';
@@ -33,6 +33,7 @@ function PostDetailPage() {
     const [isLiked, setIsLiked] = useState(false);
     const [friendshipStatus, setFriendshipStatus] = useState('none');
     const [messageActionLoading, setMessageActionLoading] = useState(false);
+    const [graveRequestLoading, setGraveRequestLoading] = useState(false);
     const textareaRef = useRef(null);
     const replyFileInputRef = useRef(null);
 
@@ -193,6 +194,10 @@ function PostDetailPage() {
 
     const handleSubmitReply = async (e) => {
         e.preventDefault();
+        if (post?.is_grave) {
+            alert('该帖子已成坟贴，不可回复');
+            return;
+        }
         if (!replyContent.trim()) return;
         setSubmitting(true);
         try {
@@ -212,13 +217,49 @@ function PostDetailPage() {
             setReplyTarget(null);
             await loadReplies();
             await loadPost();
-        } catch {
-            alert(t('replyFailed'));
+        } catch (err) {
+            alert(err.response?.data?.detail || t('replyFailed'));
         } finally {
             setSubmitting(false);
         }
     };
 
+    const handleRequestGrave = async () => {
+        if (!isLoggedIn) {
+            alert(t('pleaseLogin'));
+            return;
+        }
+        if (user?.is_admin) {
+            if (!window.confirm('确定要把该帖子设为坟贴吗？')) return;
+            setGraveRequestLoading(true);
+            try {
+                const updated = await postService.markPostGrave(id);
+                setPost(updated);
+                await loadReplies();
+                alert('已设为坟贴');
+            } catch (err) {
+                alert(err.response?.data?.detail || t('operationFailed'));
+            } finally {
+                setGraveRequestLoading(false);
+            }
+            return;
+        }
+        if (user?.uid !== post?.author_id) {
+            alert('只能申请自己的帖子为坟贴');
+            return;
+        }
+        const reason = window.prompt('请输入坟贴申请原因（可留空）', '');
+        if (reason === null) return;
+        setGraveRequestLoading(true);
+        try {
+            await postService.requestGravePost(id, reason);
+            alert('坟贴申请已发送，等待管理员审核');
+        } catch (err) {
+            alert(err.response?.data?.detail || t('operationFailed'));
+        } finally {
+            setGraveRequestLoading(false);
+        }
+    };
     const handleDelete = async () => {
         if (!window.confirm(t('deletePostConfirm'))) return;
         try {
@@ -324,7 +365,7 @@ function PostDetailPage() {
             </button>
             <div className="post-detail-card">
                 <div className="post-detail-header">
-                    <span className="post-detail-category">「{categoryLabel}」</span>
+                    <span className="post-detail-category">【{categoryLabel}】</span>
                     <h1 className="post-detail-title">{post.title}</h1>
                 </div>
                 <div className="post-detail-meta">
@@ -354,6 +395,10 @@ function PostDetailPage() {
                     <RichContent text={post.content || t('noContent')} />
                 </div>
 
+                {post.is_grave && (
+                    <div className="grave-post-notice">该帖子已成坟贴，不可回复</div>
+                )}
+
                 <div className="post-detail-actions">
                     <button
                         className={`post-like-btn ${isLiked ? 'liked' : ''}`}
@@ -363,6 +408,11 @@ function PostDetailPage() {
                     </button>
                     {isLoggedIn && user && (user?.uid === post.author_id || user?.is_admin) && (
                         <button className="post-delete-btn" onClick={handleDelete}>{t('deletePost')}</button>
+                    )}
+                    {isLoggedIn && !post.is_grave && (user?.is_admin || user?.uid === post.author_id) && (
+                        <button className="post-grave-btn" onClick={handleRequestGrave} disabled={graveRequestLoading}>
+                            {graveRequestLoading ? '处理中...' : (user?.is_admin ? '设为坟贴' : '申请坟贴')}
+                        </button>
                     )}
                 </div>
             </div>
@@ -395,7 +445,7 @@ function PostDetailPage() {
                                     <RichContent text={reply.content} />
                                 </div>
                                 <div className="reply-item-actions">
-                                    {isLoggedIn && (
+                                    {isLoggedIn && !post.is_grave && (
                                         <button className="reply-action-btn" onClick={() => handleReplyTo(reply)}>
                                             {t('comment')}
                                         </button>
@@ -415,7 +465,9 @@ function PostDetailPage() {
                     </div>
                 )}
 
-                {isLoggedIn ? (
+                {post.is_grave ? (
+                    <p className="reply-login-hint">该帖子已成坟贴，不可回复</p>
+                ) : isLoggedIn ? (
                     <form className="reply-form" onSubmit={handleSubmitReply}>
                         <div className="reply-form-field">
                             {replyTarget && replyContent.startsWith(`@${replyTarget.username}`) && (

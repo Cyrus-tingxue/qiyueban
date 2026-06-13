@@ -199,6 +199,16 @@
     animation: fadeIn 0.3s ease;
 }
 
+.login-modal-appeal-link {
+    color: var(--color-accent);
+    font-size: 0.85rem;
+    text-decoration: underline;
+}
+
+.login-modal-appeal-link:hover {
+    color: var(--color-accent-bright);
+}
+
 .login-modal-success {
     color: #68d391;
     font-size: 0.8rem;

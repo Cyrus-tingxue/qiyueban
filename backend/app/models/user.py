@@ -19,5 +19,7 @@ class User(Base):
     password_reset_expires_at = Column(DateTime, nullable=True)
     avatar = Column(String(255), default="")
     is_admin = Column(Boolean, default=False)
+    is_banned = Column(Boolean, default=False)
+    banned_reason = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     last_seen_at = Column(DateTime, nullable=True)
