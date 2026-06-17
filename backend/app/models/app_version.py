@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.sql import func
-from . import Base
+from ..database import Base
 
 class AppVersion(Base):
     __tablename__ = "app_versions"
