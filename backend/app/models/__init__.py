@@ -9,6 +9,7 @@ from .friendship import Friendship
 from .chat_group import ChatGroup, ChatGroupMember
 from .group_invite import ChatGroupInvite
 from .group_message import GroupMessage
+from .app_version import AppVersion
 
 __all__ = [
     "User",
@@ -27,4 +28,5 @@ __all__ = [
     "ChatGroupMember",
     "ChatGroupInvite",
     "GroupMessage",
+    "AppVersion",
 ]

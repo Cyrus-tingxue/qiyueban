@@ -7,6 +7,7 @@ import { postService } from '../services/postService';
 import { announcementService } from '../services/announcementService';
 import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'expo-router';
+import api from '../services/api';
 
 export default function AdminScreen() {
   const { t } = useLang();
@@ -21,6 +22,11 @@ export default function AdminScreen() {
   const [banUsername, setBanUsername] = useState('');
   const [banReason, setBanReason] = useState('');
   const [banIpStr, setBanIpStr] = useState('');
+  
+  const [appVersionCode, setAppVersionCode] = useState('1');
+  const [appVersionName, setAppVersionName] = useState('1.0.0');
+  const [appDownloadUrl, setAppDownloadUrl] = useState('/api/uploads/qiyueban.apk');
+  const [appUpdateLog, setAppUpdateLog] = useState('修复了一些Bug');
   
   const [loading, setLoading] = useState(false);
 
@@ -42,6 +48,17 @@ export default function AdminScreen() {
 
       const i = await authService.getIpBans();
       setIpBans(i);
+
+      try {
+        const vResp = await api.get('/app-version/latest');
+        if (vResp.data) {
+          setAppVersionCode(vResp.data.version_code.toString());
+          setAppVersionName(vResp.data.version_name);
+          setAppDownloadUrl(vResp.data.download_url);
+          setAppUpdateLog(vResp.data.update_log);
+        }
+      } catch (err) { console.log('No app version found'); }
+
     } catch (e) { console.warn(e); }
   };
 
@@ -147,6 +164,34 @@ export default function AdminScreen() {
               <Text style={styles.btnText}>{t('banByUsername')}</Text>
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* App Version Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>App 版本发布</Text>
+          <TextInput style={styles.input} placeholder="版本代号 (如 2)" value={appVersionCode} onChangeText={setAppVersionCode} keyboardType="numeric" />
+          <TextInput style={styles.input} placeholder="版本名称 (如 1.1.0)" value={appVersionName} onChangeText={setAppVersionName} />
+          <TextInput style={styles.input} placeholder="下载链接" value={appDownloadUrl} onChangeText={setAppDownloadUrl} />
+          <TextInput style={[styles.input, {height: 80}]} multiline placeholder="更新日志" value={appUpdateLog} onChangeText={setAppUpdateLog} />
+          <TouchableOpacity style={styles.btn} onPress={async () => {
+            setLoading(true);
+            try {
+              await api.post('/app-version/', {
+                version_code: parseInt(appVersionCode),
+                version_name: appVersionName,
+                download_url: appDownloadUrl,
+                update_log: appUpdateLog,
+                force_update: false
+              });
+              Alert.alert('成功', '版本信息已发布');
+            } catch (e) {
+              Alert.alert('失败', '发布版本信息失败');
+            } finally {
+              setLoading(false);
+            }
+          }}>
+            <Text style={styles.btnText}>发布新版本</Text>
+          </TouchableOpacity>
         </View>
 
         {/* IP Ban Section */}

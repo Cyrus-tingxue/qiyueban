@@ -5,8 +5,13 @@ import { LanguageProvider } from '../contexts/LanguageContext';
 import { Colors } from '../constants/Colors';
 import AnnouncementModal from '../components/AnnouncementModal';
 import { useEffect } from 'react';
+import { updater } from '../utils/updater';
 
 export default function RootLayout() {
+  useEffect(() => {
+    updater.checkUpdate();
+  }, []);
+
   return (
     <LanguageProvider>
       <AuthProvider>

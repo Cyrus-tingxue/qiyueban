@@ -7,7 +7,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from .config import CORS_ORIGINS
 from .database import init_db, SessionLocal
-from .routers import announcement, auth, posts, notifications, messages, uploads
+from .routers import announcement, auth, posts, notifications, messages, uploads, app_version
 from .services.post import init_categories
 from .models.moderation import IpBan
 import os
@@ -61,6 +61,7 @@ app.include_router(posts.router, prefix="/api")
 app.include_router(uploads.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
 app.include_router(messages.router, prefix="/api")
+app.include_router(app_version.router, prefix="/api/app-version", tags=["App Version"])
 
 
 @app.on_event("startup")

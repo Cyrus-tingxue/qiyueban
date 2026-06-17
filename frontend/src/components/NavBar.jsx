@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import api from '../services/api';
 
 import { useAuth } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LanguageContext';
@@ -28,6 +29,23 @@ function NavBar() {
     if (user?.is_admin) {
         navItems.push({ key: 'navAdmin', path: '/admin', label: '管理', icon: 'admin' });
     }
+
+    const handleDownloadApp = async () => {
+        try {
+            const res = await api.get('/app-version/latest');
+            if (res.data && res.data.download_url) {
+                let url = res.data.download_url;
+                if (!url.startsWith('http')) {
+                    url = `${api.defaults.baseURL.replace('/api', '')}${url.startsWith('/') ? '' : '/'}${url}`;
+                }
+                window.location.href = url;
+            } else {
+                alert('App 下载地址未配置');
+            }
+        } catch (e) {
+            alert('获取下载链接失败');
+        }
+    };
 
     useEffect(() => {
         if (!isLoggedIn) {
@@ -120,6 +138,9 @@ function NavBar() {
                     )}
                 </NavLink>
             ))}
+            <div className="navbar-item" onClick={handleDownloadApp} style={{ cursor: 'pointer' }}>
+                <span className="navbar-label">⬇️ 下载App</span>
+            </div>
         </nav>
     );
 }
