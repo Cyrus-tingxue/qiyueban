@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLang } from '../contexts/LanguageContext';
 import LoginButton from './LoginButton';
+import api from '../services/api';
 import './Header.css';
 
 function Header() {
@@ -11,6 +12,48 @@ function Header() {
     const [keyword, setKeyword] = useState("");
     const [searchOpen, setSearchOpen] = useState(false);
     const navigate = useNavigate();
+
+    const [showAppBtn, setShowAppBtn] = useState(true);
+
+    useEffect(() => {
+        if (isLoggedIn) {
+            const hideTime = localStorage.getItem(`hideAppBtnTime_${user?.uid}`);
+            if (hideTime) {
+                const time = parseInt(hideTime, 10);
+                if (Date.now() - time < 7 * 24 * 60 * 60 * 1000) {
+                    setShowAppBtn(false);
+                }
+            }
+        }
+    }, [isLoggedIn, user?.uid]);
+
+    const handleDismissAppBtn = () => {
+        setShowAppBtn(false);
+        if (isLoggedIn) {
+            localStorage.setItem(`hideAppBtnTime_${user?.uid}`, Date.now().toString());
+        }
+    };
+
+    const handleDownloadApp = async () => {
+        try {
+            const res = await api.get('/app-version/latest');
+            if (res.data && res.data.download_url) {
+                let url = res.data.download_url;
+                if (!url.startsWith('http')) {
+                    url = `${api.defaults.baseURL.replace('/api', '')}${url.startsWith('/') ? '' : '/'}${url}`;
+                }
+                window.location.href = url;
+            } else {
+                alert('App 下载地址未配置');
+            }
+        } catch (e) {
+            if (e.response?.status === 404) {
+                alert('当前暂无最新版本的 App 可供下载');
+            } else {
+                alert('获取下载链接失败，请稍后重试');
+            }
+        }
+    };
 
     const handleSearch = () => {
         if (keyword.trim()) {
@@ -63,6 +106,13 @@ function Header() {
                 <button className="header-lang-btn" onClick={toggleLang} title="Switch Language">
                     {lang === 'zh' ? 'EN' : '中'}
                 </button>
+
+                {showAppBtn && (
+                    <div className="header-app-btn">
+                        <span onClick={handleDownloadApp} className="app-btn-text">下载 App</span>
+                        <button className="app-btn-close" onClick={handleDismissAppBtn} title="隐藏">✕</button>
+                    </div>
+                )}
 
                 {isLoggedIn && (
                     <div className={`header-user-badge ${user?.is_admin ? 'header-user-admin' : ''}`}>

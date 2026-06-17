@@ -280,3 +280,47 @@
         font-size: 0.85rem;
     }
 }
+
+/* 下载 App 按钮 */
+.header-app-btn {
+    display: flex;
+    align-items: center;
+    background: rgba(196, 43, 43, 0.1);
+    border: 1px solid var(--color-accent);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-right: 8px;
+    height: 32px;
+}
+
+.app-btn-text {
+    padding: 0 12px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: var(--color-accent);
+    cursor: pointer;
+    line-height: 32px;
+    transition: all 0.2s;
+}
+
+.app-btn-text:hover {
+    background: rgba(196, 43, 43, 0.2);
+    color: var(--color-accent-bright);
+}
+
+.app-btn-close {
+    padding: 0 8px;
+    height: 100%;
+    border: none;
+    background: transparent;
+    border-left: 1px solid rgba(196, 43, 43, 0.2);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.app-btn-close:hover {
+    background: rgba(255, 0, 0, 0.2);
+    color: #fff;
+}

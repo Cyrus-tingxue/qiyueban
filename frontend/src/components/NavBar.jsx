@@ -30,28 +30,7 @@ function NavBar() {
         navItems.push({ key: 'navAdmin', path: '/admin', label: '管理', icon: 'admin' });
     }
 
-    const [showDownloadBtn, setShowDownloadBtn] = useState(true);
 
-    const handleDownloadApp = async () => {
-        try {
-            const res = await api.get('/app-version/latest');
-            if (res.data && res.data.download_url) {
-                let url = res.data.download_url;
-                if (!url.startsWith('http')) {
-                    url = `${api.defaults.baseURL.replace('/api', '')}${url.startsWith('/') ? '' : '/'}${url}`;
-                }
-                window.location.href = url;
-            } else {
-                alert('App 下载地址未配置');
-            }
-        } catch (e) {
-            if (e.response?.status === 404) {
-                alert('当前暂无最新版本的 App 可供下载');
-            } else {
-                alert('获取下载链接失败，请稍后重试');
-            }
-        }
-    };
 
     useEffect(() => {
         if (!isLoggedIn) {
@@ -123,41 +102,27 @@ function NavBar() {
         };
     }, [isLoggedIn]);
 
-    return (
-        <>
-            <nav className="navbar">
-                {navItems.map((item) => (
-                    <NavLink
-                        key={item.path}
-                        to={item.path}
-                        className={({ isActive }) => `navbar-item ${isActive ? 'active' : ''}`}
-                    >
-                        <span className="navbar-label">{item.label || t(item.key)}</span>
+        <nav className="navbar">
+            {navItems.map((item) => (
+                <NavLink
+                    key={item.path}
+                    to={item.path}
+                    className={({ isActive }) => `navbar-item ${isActive ? 'active' : ''}`}
+                >
+                    <span className="navbar-label">{item.label || t(item.key)}</span>
 
-                        {item.key === 'navMy' && unreadCount > 0 && (
-                            <span className="nav-unread-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
-                        )}
+                    {item.key === 'navMy' && unreadCount > 0 && (
+                        <span className="nav-unread-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+                    )}
 
-                        {item.key === 'navChat' && unreadMessagesCount > 0 && (
-                            <span className="nav-unread-badge">
-                                {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
-                            </span>
-                        )}
-                    </NavLink>
-                ))}
-            </nav>
-
-            {showDownloadBtn && (
-                <div className="floating-download-btn">
-                    <div className="download-content" onClick={handleDownloadApp}>
-                        <span>下载 App</span>
-                    </div>
-                    <button className="close-download-btn" onClick={() => setShowDownloadBtn(false)}>
-                        ✕
-                    </button>
-                </div>
-            )}
-        </>
+                    {item.key === 'navChat' && unreadMessagesCount > 0 && (
+                        <span className="nav-unread-badge">
+                            {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                        </span>
+                    )}
+                </NavLink>
+            ))}
+        </nav>
     );
 }
 

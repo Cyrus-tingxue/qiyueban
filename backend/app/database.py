@@ -30,6 +30,20 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
+
+# Enable WAL mode and robust synchronous settings for SQLite to improve concurrency
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    if "sqlite" in DATABASE_URL:
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.close()
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+
 def get_db():
     """FastAPI 依赖：获取数据库会话"""
     db = SessionLocal()
@@ -43,7 +57,7 @@ def init_db():
     """创建所有表"""
     from . import models  # noqa: F401
     
-    # 因为使用 SQLite 且没有完整应用 Alembic，手工加上新字段（防止 drop 表丢失数据）
+    # 兼容 SQLite 和 PostgreSQL
     try:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE replies ADD COLUMN reply_to_id INTEGER REFERENCES replies(id)"))
@@ -54,21 +68,21 @@ def init_db():
 
     try:
         with engine.begin() as conn:
-            conn.execute(text("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT 0"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE"))
     except Exception:
         pass
 
     for statement in (
-        "ALTER TABLE users ADD COLUMN is_banned BOOLEAN DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN is_banned BOOLEAN DEFAULT FALSE",
         "ALTER TABLE users ADD COLUMN banned_reason VARCHAR(500)",
         "ALTER TABLE users ADD COLUMN email VARCHAR(255)",
-        "ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT FALSE",
         "ALTER TABLE users ADD COLUMN pending_email VARCHAR(255)",
         "ALTER TABLE users ADD COLUMN email_verification_code_hash VARCHAR(128)",
-        "ALTER TABLE users ADD COLUMN email_verification_expires_at DATETIME",
+        "ALTER TABLE users ADD COLUMN email_verification_expires_at TIMESTAMP",
         "ALTER TABLE users ADD COLUMN password_reset_token_hash VARCHAR(128)",
-        "ALTER TABLE users ADD COLUMN password_reset_expires_at DATETIME",
-        "ALTER TABLE users ADD COLUMN last_seen_at DATETIME",
+        "ALTER TABLE users ADD COLUMN password_reset_expires_at TIMESTAMP",
+        "ALTER TABLE users ADD COLUMN last_seen_at TIMESTAMP",
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users(email)",
     ):
         try:
@@ -84,8 +98,8 @@ def init_db():
         pass
 
     for statement in (
-        "ALTER TABLE posts ADD COLUMN is_grave BOOLEAN DEFAULT 0",
-        "ALTER TABLE posts ADD COLUMN grave_at DATETIME",
+        "ALTER TABLE posts ADD COLUMN is_grave BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE posts ADD COLUMN grave_at TIMESTAMP",
         "ALTER TABLE posts ADD COLUMN grave_by_id INTEGER REFERENCES users(id)",
         "CREATE INDEX IF NOT EXISTS ix_posts_is_grave ON posts(is_grave)",
     ):
@@ -102,8 +116,8 @@ def init_db():
         pass
 
     for statement in (
-        "ALTER TABLE messages ADD COLUMN sender_deleted_at DATETIME",
-        "ALTER TABLE messages ADD COLUMN receiver_deleted_at DATETIME",
+        "ALTER TABLE messages ADD COLUMN sender_deleted_at TIMESTAMP",
+        "ALTER TABLE messages ADD COLUMN receiver_deleted_at TIMESTAMP",
         "CREATE INDEX IF NOT EXISTS ix_messages_sender_deleted_at ON messages(sender_deleted_at)",
         "CREATE INDEX IF NOT EXISTS ix_messages_receiver_deleted_at ON messages(receiver_deleted_at)",
     ):
@@ -167,11 +181,6 @@ def apply_postgres_column_expansions(target_engine):
         'ALTER TABLE users ALTER COLUMN nickname TYPE VARCHAR(255)',
         'ALTER TABLE posts ALTER COLUMN title TYPE VARCHAR(500)',
         'ALTER TABLE posts ALTER COLUMN author_name TYPE VARCHAR(255)',
-        'ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_grave BOOLEAN DEFAULT FALSE',
-        'ALTER TABLE posts ADD COLUMN IF NOT EXISTS grave_at TIMESTAMP',
-        'ALTER TABLE posts ADD COLUMN IF NOT EXISTS grave_by_id INTEGER REFERENCES users(id)',
-        'ALTER TABLE users ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT FALSE',
-        'ALTER TABLE users ADD COLUMN IF NOT EXISTS banned_reason VARCHAR(500)',
         'ALTER TABLE replies ALTER COLUMN author_name TYPE VARCHAR(255)',
         'ALTER TABLE replies ALTER COLUMN reply_to_username TYPE VARCHAR(255)',
         'ALTER TABLE notifications ALTER COLUMN sender_name TYPE VARCHAR(255)',
