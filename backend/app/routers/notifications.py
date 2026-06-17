@@ -121,6 +121,18 @@ def read_all_notifications(
     return {"detail": "全部已读"}
 
 
+@router.delete("/notifications/clear-read")
+def clear_read_notifications(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    deleted_count = notification_feed_query(db, current_user.id).filter(
+        Notification.is_read == True
+    ).delete(synchronize_session=False)
+    db.commit()
+    return {"detail": "已清除所有已读消息", "deleted_count": deleted_count}
+
+
 @router.delete("/notifications/clear-all")
 def clear_all_notifications(
     db: Session = Depends(get_db),
@@ -128,4 +140,4 @@ def clear_all_notifications(
 ):
     deleted_count = notification_feed_query(db, current_user.id).delete(synchronize_session=False)
     db.commit()
-    return {"detail": "已全部清除", "deleted_count": deleted_count}
+    return {"detail": "已全部清空", "deleted_count": deleted_count}

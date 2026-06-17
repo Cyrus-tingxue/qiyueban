@@ -337,21 +337,35 @@ def review_grave_request(db: Session, request_id: int, reviewer_id: int, approve
     request.status = "approved" if approve else "rejected"
     request.reviewed_by_id = reviewer_id
     request.reviewed_at = datetime.now(timezone.utc)
-    if approve:
-        post = db.query(Post).filter(Post.id == request.post_id).first()
-        if post:
-            reviewer = db.query(User).filter(User.id == reviewer_id).first()
-            reply = Reply(
-                content="由于未知原因，此帖子不可回复。",
-                post_id=post.id,
-                author_id=reviewer_id,
-                author_name=reviewer.nickname if reviewer else "管理员",
-            )
-            db.add(reply)
-            post.reply_count = (post.reply_count or 0) + 1
-            post.is_grave = True
-            post.grave_at = request.reviewed_at
-            post.grave_by_id = reviewer_id
+    
+    post = db.query(Post).filter(Post.id == request.post_id).first()
+    reviewer = db.query(User).filter(User.id == reviewer_id).first()
+    reviewer_name = reviewer.nickname if reviewer else "管理员"
+    
+    if approve and post:
+        reply = Reply(
+            content="由于未知原因，此帖子不可回复。",
+            post_id=post.id,
+            author_id=reviewer_id,
+            author_name=reviewer_name,
+        )
+        db.add(reply)
+        post.reply_count = (post.reply_count or 0) + 1
+        post.is_grave = True
+        post.grave_at = request.reviewed_at
+        post.grave_by_id = reviewer_id
+        
+    if post:
+        # Notify the author of the post
+        db.add(Notification(
+            receiver_id=post.author_id,
+            sender_id=reviewer_id,
+            sender_name=reviewer_name,
+            type="grave_approved" if approve else "grave_rejected",
+            target_id=request.id,
+            post_id=post.id
+        ))
+
     db.commit()
     db.refresh(request)
     return request
