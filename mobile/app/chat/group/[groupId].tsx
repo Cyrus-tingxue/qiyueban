@@ -242,9 +242,9 @@ export default function GroupChatScreen() {
                   <View>
                     {showDate && <Text style={styles.dateSeparator}>{dateText}</Text>}
                     <View style={[styles.messageRow, isSelf ? styles.messageRowSelf : styles.messageRowOther]}>
-                      {!isSelf && <AvatarIcon type={item.sender_avatar || 'eye'} size={32} isAnimating={false} />}
+                      {!isSelf && <AvatarIcon type={item.sender?.avatar || 'eye'} size={32} isAnimating={false} />}
                       <View style={styles.bubbleContainer}>
-                        {!isSelf && <Text style={styles.senderName}>{item.sender_name}</Text>}
+                        {!isSelf && <Text style={styles.senderName}>{item.sender?.nickname || item.sender?.username || '匿名'}</Text>}
                         <View style={[styles.bubble, isSelf ? styles.bubbleSelf : styles.bubbleOther]}>
                           <RichContent text={item.content} />
                           <Text style={styles.msgTime}>{item.created_at?.substring(11, 16)}</Text>
