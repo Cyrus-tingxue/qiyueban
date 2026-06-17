@@ -101,7 +101,7 @@ function NavBar() {
             document.removeEventListener('visibilitychange', handleAppFocus);
         };
     }, [isLoggedIn]);
-
+    return (
         <nav className="navbar">
             {navItems.map((item) => (
                 <NavLink
