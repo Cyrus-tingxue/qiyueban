@@ -12,8 +12,8 @@ import { postService } from '../services/postService';
 import { isGroupMuted, setGroupMuted } from '../utils/groupMute';
 import './ChatPage.css';
 
-const PRIVATE_POLL_INTERVAL_MS = 3000;
-const GROUP_POLL_INTERVAL_MS = 2000;
+const PRIVATE_POLL_INTERVAL_MS = 5000;
+const GROUP_POLL_INTERVAL_MS = 5000;
 const PRIVATE_INITIAL_BATCH = 30;
 const GROUP_INITIAL_BATCH = 40;
 const PRIVATE_HISTORY_BATCH = 30;

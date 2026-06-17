@@ -9,7 +9,7 @@ import { postService } from '../services/postService';
 import { getMutedGroupIds } from '../utils/groupMute';
 import './NavBar.css';
 
-const UNREAD_REFRESH_MS = 3000;
+const UNREAD_REFRESH_MS = 15000;
 
 function NavBar() {
     const { isLoggedIn, user } = useAuth();

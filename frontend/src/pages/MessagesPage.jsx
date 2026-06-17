@@ -9,7 +9,7 @@ import { messageService } from '../services/messageService';
 import { getMutedGroupIds } from '../utils/groupMute';
 import './MessagesPage.css';
 
-const DASHBOARD_REFRESH_MS = 3000;
+const DASHBOARD_REFRESH_MS = 10000;
 
 const MessagesPage = () => {
     const { user } = useAuth();
