@@ -7,34 +7,25 @@ from .config import DATABASE_URL
 # Set echo based on env variable, default to False for production performance
 echo_sql = os.getenv("SQLALCHEMY_ECHO", "False").lower() in ("true", "1", "t")
 
+# Automatically use psycopg3 driver if user provided postgresql://
+db_url = DATABASE_URL
+if db_url and db_url.startswith("postgresql://"):
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+
 engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
+    db_url,
+    connect_args={"check_same_thread": False} if "sqlite" in db_url else {},
     pool_pre_ping=True,
     pool_recycle=1800,
-    pool_size=10 if "sqlite" not in DATABASE_URL else 5,
-    max_overflow=20 if "sqlite" not in DATABASE_URL else 10,
+    pool_size=10 if "sqlite" not in db_url else 5,
+    max_overflow=20 if "sqlite" not in db_url else 10,
     echo=echo_sql,
 )
 
 # Enable WAL mode and robust synchronous settings for SQLite to improve concurrency
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
-    if "sqlite" in DATABASE_URL:
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA journal_mode=WAL")
-        cursor.execute("PRAGMA synchronous=NORMAL")
-        cursor.close()
-
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
-
-
-
-# Enable WAL mode and robust synchronous settings for SQLite to improve concurrency
-@event.listens_for(Engine, "connect")
-def set_sqlite_pragma(dbapi_connection, connection_record):
-    if "sqlite" in DATABASE_URL:
+    if "sqlite" in db_url:
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA synchronous=NORMAL")
