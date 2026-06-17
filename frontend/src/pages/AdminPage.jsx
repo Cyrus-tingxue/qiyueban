@@ -26,16 +26,10 @@ function AdminPage() {
     const [banIpReason, setBanIpReason] = useState('');
     const [ipBans, setIpBans] = useState([]);
 
-    const [appVersionLoading, setAppVersionLoading] = useState(false);
-    const [appDownloadUrl, setAppDownloadUrl] = useState('');
-    const [appVersionId, setAppVersionId] = useState(null);
-    const [appVersionMessage, setAppVersionMessage] = useState('');
-
     useEffect(() => {
         if (!isLoggedIn || !user?.is_admin) return;
         loadAnnouncement();
         loadAdminModeration();
-        loadAppVersion();
     }, [isLoggedIn, user?.is_admin]);
 
     const loadAnnouncement = async () => {
@@ -64,61 +58,6 @@ function AdminPage() {
             setAnnouncementError(err.response?.data?.detail || '公告保存失败');
         } finally {
             setAnnouncementSaving(false);
-        }
-    };
-
-    const loadAppVersion = async () => {
-        try {
-            const { data } = await api.get('/app-version/latest');
-            setAppDownloadUrl(data.download_url || '');
-            setAppVersionId(data.id);
-        } catch (err) {
-            // No version exists yet
-        }
-    };
-
-    const handleApkUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        setAppVersionLoading(true);
-        setAppVersionMessage('正在上传安装包(APK 文件较大，请耐心等待)...');
-        const formData = new FormData();
-        formData.append('file', file);
-        try {
-            const { data } = await api.post('/uploads/upload/apk', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            setAppDownloadUrl(data.url);
-            setAppVersionMessage('APK 上传成功！请点击下方“保存配置”按钮生效。');
-        } catch (err) {
-            setAppVersionMessage(err.response?.data?.detail || '上传失败，可能文件太大或格式不正确');
-        } finally {
-            setAppVersionLoading(false);
-            e.target.value = null;
-        }
-    };
-
-    const handleSaveAppVersion = async (e) => {
-        e.preventDefault();
-        setAppVersionLoading(true);
-        setAppVersionMessage('');
-        try {
-            if (appVersionId) {
-                await api.put(`/app-version/${appVersionId}`, { download_url: appDownloadUrl });
-            } else {
-                await api.post('/app-version/', { 
-                    version_code: 999, 
-                    version_name: '1.0.0', 
-                    download_url: appDownloadUrl,
-                    update_log: '初始发布'
-                });
-            }
-            setAppVersionMessage('App 下载地址配置已生效！去前台点下载试试吧！');
-            await loadAppVersion();
-        } catch (err) {
-            setAppVersionMessage(err.response?.data?.detail || '保存配置失败');
-        } finally {
-            setAppVersionLoading(false);
         }
     };
 
@@ -253,45 +192,6 @@ function AdminPage() {
 
             <section className="my-admin-panel">
                 <div className="my-notif-header">
-                    <h3>App 下载配置</h3>
-                </div>
-                <form className="my-account-form" onSubmit={handleSaveAppVersion}>
-                    <div className="my-account-field">
-                        <label>安装包直链 (Download URL)</label>
-                        <input
-                            type="text"
-                            value={appDownloadUrl}
-                            onChange={(e) => setAppDownloadUrl(e.target.value)}
-                            placeholder="可直接填入蓝奏云直链，或在下方直接上传本地 APK"
-                            disabled={appVersionLoading}
-                        />
-                    </div>
-                    
-                    <div className="my-account-field">
-                        <label>上传本地 APK 到服务器 (会自动填充链接)</label>
-                        <input
-                            type="file"
-                            accept=".apk"
-                            onChange={handleApkUpload}
-                            disabled={appVersionLoading}
-                            style={{ padding: '8px 0', border: 'none', background: 'transparent' }}
-                        />
-                    </div>
-
-                    {appVersionMessage && (
-                        <div className={`my-account-${appVersionMessage.includes('失败') ? 'error' : 'success'}`}>
-                            {appVersionMessage}
-                        </div>
-                    )}
-                    
-                    <button className="read-all-btn my-account-submit" type="submit" disabled={appVersionLoading}>
-                        {appVersionLoading ? '处理中...' : '保存配置'}
-                    </button>
-                </form>
-            </section>
-
-            <section className="my-admin-panel">
-                <div className="my-notif-header">
                     <h3>坟贴申请</h3>
                 </div>
                 {graveRequests.length === 0 ? (
@@ -366,6 +266,58 @@ function AdminPage() {
                         </div>
                     ))}
                 </div>
+            <section className="my-admin-panel">
+                <div className="my-notif-header">
+                    <h3>App 版本发布</h3>
+                </div>
+                <form className="my-account-form" onSubmit={async (e) => {
+                    e.preventDefault();
+                    try {
+                        const form = e.target;
+                        const data = {
+                            version_code: parseInt(form.version_code.value, 10),
+                            version_name: form.version_name.value,
+                            download_url: form.download_url.value,
+                            update_log: form.update_log.value,
+                            force_update: form.force_update.checked
+                        };
+                        const { appVersionService } = await import('../services/appVersionService.js').catch(() => ({ 
+                            appVersionService: {
+                                createVersion: async (d) => {
+                                    const { default: api } = await import('../services/api.js');
+                                    return (await api.post('/app-version/', d)).data;
+                                }
+                            } 
+                        }));
+                        await appVersionService.createVersion(data);
+                        setAdminMessage('App 新版本发布成功！');
+                        form.reset();
+                    } catch (err) {
+                        setAdminMessage(err.response?.data?.detail || 'App 发布失败');
+                    }
+                }}>
+                    <div className="my-account-field">
+                        <label>版本号 (数字, 如 2)</label>
+                        <input name="version_code" type="number" placeholder="必须比上一个版本大" required />
+                    </div>
+                    <div className="my-account-field">
+                        <label>版本名 (如 1.0.1)</label>
+                        <input name="version_name" placeholder="如 1.0.1" required />
+                    </div>
+                    <div className="my-account-field">
+                        <label>下载链接 (下载地址)</label>
+                        <input name="download_url" placeholder="/api/uploads/qiyueban.apk" required defaultValue="/api/uploads/qiyueban.apk" />
+                    </div>
+                    <div className="my-account-field">
+                        <label>更新日志</label>
+                        <textarea className="my-admin-textarea" name="update_log" placeholder="填写新版本更新内容" required></textarea>
+                    </div>
+                    <div className="my-account-field" style={{ flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
+                        <input type="checkbox" name="force_update" id="force_update" style={{ width: 'auto', marginBottom: 0 }} />
+                        <label htmlFor="force_update" style={{ marginBottom: 0 }}>是否强制用户更新？</label>
+                    </div>
+                    <button className="read-all-btn my-account-submit" type="submit" style={{ marginTop: '15px' }}>发布新版本</button>
+                </form>
             </section>
         </div>
     );
