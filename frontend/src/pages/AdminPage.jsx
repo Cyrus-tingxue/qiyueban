@@ -266,58 +266,6 @@ function AdminPage() {
                         </div>
                     ))}
                 </div>
-            <section className="my-admin-panel">
-                <div className="my-notif-header">
-                    <h3>App 版本发布</h3>
-                </div>
-                <form className="my-account-form" onSubmit={async (e) => {
-                    e.preventDefault();
-                    try {
-                        const form = e.target;
-                        const data = {
-                            version_code: parseInt(form.version_code.value, 10),
-                            version_name: form.version_name.value,
-                            download_url: form.download_url.value,
-                            update_log: form.update_log.value,
-                            force_update: form.force_update.checked
-                        };
-                        const { appVersionService } = await import('../services/appVersionService.js').catch(() => ({ 
-                            appVersionService: {
-                                createVersion: async (d) => {
-                                    const { default: api } = await import('../services/api.js');
-                                    return (await api.post('/app-version/', d)).data;
-                                }
-                            } 
-                        }));
-                        await appVersionService.createVersion(data);
-                        setAdminMessage('App 新版本发布成功！');
-                        form.reset();
-                    } catch (err) {
-                        setAdminMessage(err.response?.data?.detail || 'App 发布失败');
-                    }
-                }}>
-                    <div className="my-account-field">
-                        <label>版本号 (数字, 如 2)</label>
-                        <input name="version_code" type="number" placeholder="必须比上一个版本大" required />
-                    </div>
-                    <div className="my-account-field">
-                        <label>版本名 (如 1.0.1)</label>
-                        <input name="version_name" placeholder="如 1.0.1" required />
-                    </div>
-                    <div className="my-account-field">
-                        <label>下载链接 (下载地址)</label>
-                        <input name="download_url" placeholder="/api/uploads/qiyueban.apk" required defaultValue="/api/uploads/qiyueban.apk" />
-                    </div>
-                    <div className="my-account-field">
-                        <label>更新日志</label>
-                        <textarea className="my-admin-textarea" name="update_log" placeholder="填写新版本更新内容" required></textarea>
-                    </div>
-                    <div className="my-account-field" style={{ flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
-                        <input type="checkbox" name="force_update" id="force_update" style={{ width: 'auto', marginBottom: 0 }} />
-                        <label htmlFor="force_update" style={{ marginBottom: 0 }}>是否强制用户更新？</label>
-                    </div>
-                    <button className="read-all-btn my-account-submit" type="submit" style={{ marginTop: '15px' }}>发布新版本</button>
-                </form>
             </section>
         </div>
     );
