@@ -29,6 +29,18 @@ CREATE TABLE IF NOT EXISTS categories (
     name VARCHAR(20) NOT NULL UNIQUE,
     icon VARCHAR(255) NOT NULL DEFAULT ''
 );
+
+-- 新库需要这些默认分类，否则 posts.category 的外键会阻止首次发帖。
+INSERT INTO categories (name, icon) VALUES
+    ('讨论', ''),
+    ('探灵', ''),
+    ('灵异', ''),
+    ('求助', ''),
+    ('分享', ''),
+    ('语c', ''),
+    ('OC投稿', '')
+ON CONFLICT (name) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS posts (
     id SERIAL PRIMARY KEY,
     title VARCHAR(500) NOT NULL,

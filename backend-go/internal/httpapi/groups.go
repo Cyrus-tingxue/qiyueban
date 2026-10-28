@@ -155,7 +155,11 @@ func (s *Server) joinGroup(c *gin.Context) {
 	}
 	var member model.ChatGroupMember
 	if s.DB.Where("group_id = ? AND user_id = ?", group.ID, user.ID).First(&member).Error != nil {
-		s.DB.Create(&model.ChatGroupMember{GroupID: group.ID, UserID: user.ID, JoinedAt: time.Now().UTC()})
+		// 新成员从加入时刻开始计算未读，不应看到加入前的历史消息。
+		var latest model.GroupMessage
+		s.DB.Where("group_id = ?", group.ID).Order("id DESC").First(&latest)
+		lastRead := uintPtr(latest.ID)
+		s.DB.Create(&model.ChatGroupMember{GroupID: group.ID, UserID: user.ID, LastReadMessageID: lastRead, JoinedAt: time.Now().UTC()})
 	}
 	c.JSON(200, s.groupSummary(&group, user.ID, true))
 }

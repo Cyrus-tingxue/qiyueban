@@ -2,6 +2,8 @@
 
 这是兼容现有 FastAPI 接口的 Gin + GORM 后端。服务仍使用 `/api` 前缀、同一个 PostgreSQL schema、同一个 `data/uploads` 目录以及现有 HS256 JWT。
 
+如果你是 Go、Gin、GORM 或 Docker 初学者，请先阅读 [LEARN.md](LEARN.md)。它从 `cmd` 目录、服务启动链路、PostgreSQL、migration、GORM 模型、Gin 路由、上传、AI 和常用排错命令开始讲解。
+
 ## 本地开发
 
 ```bash

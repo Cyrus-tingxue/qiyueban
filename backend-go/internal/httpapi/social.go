@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -124,13 +125,19 @@ func (s *Server) sendFriendRequest(c *gin.Context) {
 	}
 	name := user.Nickname
 	target := row.ID
-	s.DB.Create(&model.Notification{ReceiverID: in.UserID, SenderID: &user.ID, SenderName: &name, Type: "friend_request", TargetID: &target})
+	// 重复提交同一个 pending 申请时复用原通知，避免未读数量重复增长。
+	var notification model.Notification
+	if s.DB.Where("type = ? AND target_id = ? AND receiver_id = ?", "friend_request", target, in.UserID).First(&notification).Error == nil {
+		s.DB.Model(&notification).Updates(map[string]any{"sender_id": user.ID, "sender_name": name, "is_read": false})
+	} else {
+		s.DB.Create(&model.Notification{ReceiverID: in.UserID, SenderID: &user.ID, SenderName: &name, Type: "friend_request", TargetID: &target})
+	}
 	c.JSON(200, gin.H{"id": row.ID, "status": row.Status, "created_at": formatTimeValue(row.CreatedAt), "requester": userBasic(user, true), "addressee": userBasic(s.loadUser(in.UserID), true), "direction": "outgoing"})
 }
 func (s *Server) respondFriend(c *gin.Context) {
 	user := userFrom(c)
 	var row model.Friendship
-	if s.DB.First(&row, c.Param("id")).Error != nil {
+	if s.DB.Where("id = ? AND status = ?", c.Param("id"), "pending").First(&row).Error != nil {
 		Error(c, 404, "好友申请不存在")
 		return
 	}
@@ -213,8 +220,13 @@ func (s *Server) conversationMessages(c *gin.Context) {
 }
 func (s *Server) readMessages(c *gin.Context) {
 	user := userFrom(c)
+	query := s.DB.Model(&model.Message{}).Where("receiver_id = ? AND sender_id = ? AND is_read = ? AND receiver_deleted_at IS NULL", user.ID, c.Param("id"), false)
 	var result struct{ Count int64 }
-	s.DB.Model(&model.Message{}).Where("receiver_id = ? AND sender_id = ? AND is_read = ? AND receiver_deleted_at IS NULL", user.ID, c.Param("id"), false).Updates(map[string]any{"is_read": true}).Count(&result.Count)
+	query.Count(&result.Count)
+	if err := query.Update("is_read", true).Error; err != nil {
+		Error(c, 500, "标记已读失败")
+		return
+	}
 	c.JSON(200, gin.H{"status": "success", "marked_read_count": result.Count})
 }
 
@@ -232,7 +244,29 @@ func (s *Server) conversations(c *gin.Context) {
 	limit := parseBounded(c.Query("limit"), 20, 1, 100)
 	skip := parseNonNegative(c.Query("skip"), 0)
 	var rows []model.Message
-	s.DB.Where("(sender_id = ? AND sender_deleted_at IS NULL) OR (receiver_id = ? AND receiver_deleted_at IS NULL)", user.ID, user.ID).Order("created_at desc,id desc").Offset(skip).Limit(limit * 5).Find(&rows)
+	// 先取每个对话的最新消息，再分页，避免一个高频会话占满 limit*5 窗口。
+	s.DB.Raw(`
+		SELECT DISTINCT ON (other_id) * FROM (
+			SELECT m.*, CASE WHEN m.sender_id = ? THEN m.receiver_id ELSE m.sender_id END AS other_id
+			FROM messages m
+			WHERE ((m.sender_id = ? AND m.sender_deleted_at IS NULL) OR (m.receiver_id = ? AND m.receiver_deleted_at IS NULL))
+		) conversation_latest
+		ORDER BY other_id, created_at DESC, id DESC`, user.ID, user.ID, user.ID).Scan(&rows)
+	// DISTINCT ON 查询的结果按对方 ID 排序，重新按最近消息排序后再做分页。
+	sort.Slice(rows, func(i, j int) bool {
+		if rows[i].CreatedAt.Equal(rows[j].CreatedAt) {
+			return rows[i].ID > rows[j].ID
+		}
+		return rows[i].CreatedAt.After(rows[j].CreatedAt)
+	})
+	if skip > len(rows) {
+		skip = len(rows)
+	}
+	end := skip + limit
+	if end > len(rows) {
+		end = len(rows)
+	}
+	rows = rows[skip:end]
 	seen := map[uint]bool{}
 	out := []gin.H{}
 	for _, row := range rows {
@@ -255,9 +289,10 @@ func (s *Server) conversations(c *gin.Context) {
 }
 func (s *Server) unreadMessages(c *gin.Context) {
 	user := userFrom(c)
-	var count int64
-	s.DB.Model(&model.Message{}).Where("receiver_id = ? AND is_read = ? AND receiver_deleted_at IS NULL", user.ID, false).Count(&count)
-	c.JSON(200, gin.H{"unread_count": count})
+	var privateCount, groupCount int64
+	s.DB.Model(&model.Message{}).Where("receiver_id = ? AND is_read = ? AND receiver_deleted_at IS NULL", user.ID, false).Count(&privateCount)
+	s.DB.Table("group_messages AS gm").Joins("JOIN chat_group_members AS cgm ON cgm.group_id = gm.group_id").Where("cgm.user_id = ? AND gm.id > COALESCE(cgm.last_read_message_id, 0) AND gm.sender_id <> ?", user.ID, user.ID).Count(&groupCount)
+	c.JSON(200, gin.H{"unread_count": privateCount + groupCount})
 }
 func parseNonNegative(value string, fallback int) int {
 	n, err := strconv.Atoi(value)

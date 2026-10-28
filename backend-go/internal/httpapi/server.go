@@ -211,7 +211,7 @@ func (s *Server) register(c *gin.Context) {
 		Error(c, 400, "用户名已存在")
 		return
 	}
-	hash, err := bcrypt.GenerateFromPassword([]byte(in.Password), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword(bcryptBytes(in.Password), bcrypt.DefaultCost)
 	if err != nil {
 		Error(c, 500, "注册失败")
 		return
@@ -244,7 +244,7 @@ func (s *Server) login(c *gin.Context) {
 		return
 	}
 	var user model.User
-	if s.DB.Where("username = ?", in.Username).First(&user).Error != nil || bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(in.Password)) != nil {
+	if s.DB.Where("username = ?", in.Username).First(&user).Error != nil || checkPassword(user.PasswordHash, in.Password) != nil {
 		Error(c, 401, "用户名或密码错误")
 		return
 	}
@@ -269,11 +269,11 @@ func (s *Server) changePassword(c *gin.Context) {
 		OldPassword string `json:"old_password"`
 		NewPassword string `json:"new_password"`
 	}
-	if c.ShouldBindJSON(&in) != nil || bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(in.OldPassword)) != nil {
+	if c.ShouldBindJSON(&in) != nil || checkPassword(user.PasswordHash, in.OldPassword) != nil {
 		Error(c, 400, "原密码错误")
 		return
 	}
-	hash, err := bcrypt.GenerateFromPassword([]byte(in.NewPassword), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword(bcryptBytes(in.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
 		Error(c, 500, "密码修改失败")
 		return
@@ -299,7 +299,7 @@ func (s *Server) posts(c *gin.Context) {
 	}
 	if v := c.Query("search"); v != "" {
 		like := "%" + v + "%"
-		q = q.Where("title ILIKE ? OR content ILIKE ? OR author_name ILIKE ?", like, like, like)
+		q = q.Where("title ILIKE ? OR content ILIKE ? OR author_name ILIKE ? OR author_id IN (SELECT id FROM users WHERE username ILIKE ? OR nickname ILIKE ?)", like, like, like, like, like)
 	}
 	total := int64(0)
 	q.Model(&model.Post{}).Count(&total)
@@ -338,8 +338,13 @@ func (s *Server) postResponse(row *model.Post) gin.H {
 	return gin.H{"id": row.ID, "title": row.Title, "content": row.Content, "image_url": row.ImageURL, "category": row.Category, "author": row.AuthorName, "author_id": row.AuthorID, "author_avatar": authorAvatar, "reply_count": row.ReplyCount, "like_count": row.LikeCount, "is_liked": false, "is_grave": row.IsGrave, "created_at": formatTimeValue(row.CreatedAt)}
 }
 func (s *Server) replies(c *gin.Context) {
+	var post model.Post
+	if s.DB.First(&post, c.Param("id")).Error != nil {
+		Error(c, 404, "帖子不存在")
+		return
+	}
 	var rows []model.Reply
-	if s.DB.Where("post_id = ?", c.Param("id")).Order("created_at asc").Find(&rows).Error != nil {
+	if s.DB.Where("post_id = ?", post.ID).Order("created_at asc").Find(&rows).Error != nil {
 		Error(c, 404, "帖子不存在")
 		return
 	}

@@ -1,0 +1,1 @@
+<template><button class="create-post-btn" @click="router.push('/create-post')">{{t('createPostBtn')}}</button></template><script setup>import {useRouter} from 'vue-router';import {useLang} from '../contexts/app';import './CreatePostButton.css';const router=useRouter();const {t}=useLang();</script>
