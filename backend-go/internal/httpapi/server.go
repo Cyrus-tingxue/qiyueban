@@ -311,7 +311,11 @@ func (s *Server) post(c *gin.Context) {
 	c.JSON(200, s.postResponse(&row))
 }
 func (s *Server) postResponse(row *model.Post) gin.H {
-	return gin.H{"id": row.ID, "title": row.Title, "content": row.Content, "image_url": row.ImageURL, "category": row.Category, "author": row.AuthorName, "author_id": row.AuthorID, "author_avatar": "", "reply_count": row.ReplyCount, "like_count": row.LikeCount, "is_liked": false, "is_grave": row.IsGrave, "created_at": formatTimeValue(row.CreatedAt)}
+	authorAvatar := ""
+	if author := s.loadUser(row.AuthorID); author != nil {
+		authorAvatar = author.Avatar
+	}
+	return gin.H{"id": row.ID, "title": row.Title, "content": row.Content, "image_url": row.ImageURL, "category": row.Category, "author": row.AuthorName, "author_id": row.AuthorID, "author_avatar": authorAvatar, "reply_count": row.ReplyCount, "like_count": row.LikeCount, "is_liked": false, "is_grave": row.IsGrave, "created_at": formatTimeValue(row.CreatedAt)}
 }
 func (s *Server) replies(c *gin.Context) {
 	var rows []model.Reply
@@ -321,7 +325,11 @@ func (s *Server) replies(c *gin.Context) {
 	}
 	out := make([]gin.H, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, gin.H{"id": row.ID, "content": row.Content, "image_url": row.ImageURL, "author": row.AuthorName, "author_id": row.AuthorID, "author_avatar": "", "like_count": row.LikeCount, "is_liked": false, "reply_to_id": row.ReplyToID, "reply_to_user_id": row.ReplyToUserID, "reply_to_username": row.ReplyToUsername, "created_at": formatTimeValue(row.CreatedAt)})
+		authorAvatar := ""
+		if author := s.loadUser(row.AuthorID); author != nil {
+			authorAvatar = author.Avatar
+		}
+		out = append(out, gin.H{"id": row.ID, "content": row.Content, "image_url": row.ImageURL, "author": row.AuthorName, "author_id": row.AuthorID, "author_avatar": authorAvatar, "like_count": row.LikeCount, "is_liked": false, "reply_to_id": row.ReplyToID, "reply_to_user_id": row.ReplyToUserID, "reply_to_username": row.ReplyToUsername, "created_at": formatTimeValue(row.CreatedAt)})
 	}
 	c.JSON(200, out)
 }
