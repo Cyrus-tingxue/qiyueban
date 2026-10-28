@@ -17,19 +17,32 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
-    build: ./backend
-    container_name: touqi-backend
-    restart: unless-stopped
+  migrate:
+    build:
+      context: ./backend-go
+      dockerfile: Dockerfile.migrate
+    container_name: touqi-migrate
+    restart: "no"
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-touqi}:${POSTGRES_PASSWORD:-touqi_change_me}@postgres:5432/${POSTGRES_DB:-touqi}
+      - DATABASE_URL=postgres://${POSTGRES_USER:-touqi}:${POSTGRES_PASSWORD:-touqi_change_me}@postgres:5432/${POSTGRES_DB:-touqi}?sslmode=disable
+
+  backend:
+    build: ./backend-go
+    container_name: touqi-backend
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER:-touqi}:${POSTGRES_PASSWORD:-touqi_change_me}@postgres:5432/${POSTGRES_DB:-touqi}?sslmode=disable
       - SECRET_KEY=${SECRET_KEY}
       - CORS_ORIGINS=${CORS_ORIGINS}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-240}
       - FRONTEND_URL=${FRONTEND_URL}
+      - INVITE_CODE=${INVITE_CODE:-}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USERNAME=${SMTP_USERNAME}
@@ -39,15 +52,16 @@ services:
       - ANTHROPIC_AUTH_TOKEN=${ANTHROPIC_AUTH_TOKEN}
       - ANTHROPIC_BASE_URL=${ANTHROPIC_BASE_URL}
       - ANTHROPIC_MODEL=${ANTHROPIC_MODEL}
-      - WEB_CONCURRENCY=${WEB_CONCURRENCY:-4}
-      - GUNICORN_THREADS=${GUNICORN_THREADS:-1}
-      - GUNICORN_TIMEOUT=${GUNICORN_TIMEOUT:-60}
-      - GUNICORN_MAX_REQUESTS=${GUNICORN_MAX_REQUESTS:-1000}
-      - GUNICORN_MAX_REQUESTS_JITTER=${GUNICORN_MAX_REQUESTS_JITTER:-100}
+      - PORT=80
     volumes:
       - ./data:/app/data
     expose:
       - "80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   frontend:
     build: 
