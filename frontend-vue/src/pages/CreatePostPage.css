@@ -1,14 +1,16 @@
 .create-post-page {
-    padding: var(--spacing-lg);
-    padding-left: 100px;
+    width: min(100% - 32px, 900px);
+    margin: 0 auto;
+    padding: var(--spacing-xl) 0 calc(var(--spacing-xl) + 96px);
     animation: fadeIn 0.4s ease;
 }
 
 .create-post-card {
-    max-width: 700px;
+    width: 100%;
     background: var(--color-bg-card);
     border: 1px solid var(--color-border);
-    padding: var(--spacing-xl);
+    padding: clamp(var(--spacing-lg), 4vw, 40px);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24);
 }
 
 .create-post-card h2 {
@@ -22,7 +24,12 @@
 .create-post-form {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-md);
+    gap: var(--spacing-lg);
+}
+
+.create-post-form button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
 }
 
 .create-post-field {
@@ -56,14 +63,22 @@
 }
 
 .create-post-field textarea {
-    min-height: 200px;
+    min-height: 280px;
     resize: vertical;
+    line-height: 1.7;
 }
 
 .create-post-emoji-bar {
     display: flex;
     align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
     padding-top: var(--spacing-xs);
+}
+
+.create-post-uploading-hint {
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
 }
 
 .create-post-field select {
@@ -109,9 +124,8 @@
 /* 移动端压缩级适配 */
 @media (max-width: 768px) {
     .create-post-page {
-        padding: var(--spacing-sm);
-        padding-left: 60px;
-        /* 相对缩小 */
+        width: calc(100% - 20px);
+        padding: var(--spacing-md) 0 calc(var(--spacing-md) + 84px);
     }
 
     .create-post-card {
@@ -128,6 +142,14 @@
     .create-post-field select {
         font-size: 0.9rem;
         padding: var(--spacing-xs) var(--spacing-sm);
+    }
+
+    .create-post-field textarea {
+        min-height: 220px;
+    }
+
+    .create-post-actions {
+        flex-wrap: wrap;
     }
 
     .create-post-submit,
