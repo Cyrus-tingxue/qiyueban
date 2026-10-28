@@ -31,5 +31,4 @@ docker compose up -d --build
 - 错误体保持 `{ "detail": "..." }`。
 - 时间展示保持 `YYYY-MM-DD HH:mm`（Asia/Shanghai）。
 - 上传字段为 multipart `file`，URL 为 `/api/uploads/<uuid>.<ext>`。
-- `INVITE_CODE` 用于恢复前端使用的 `/auth/verify-invite`；生产环境应显式设置随机值，不要依赖默认邀请码。
 - `ANTHROPIC_*` 当前配置实际上连接 OpenAI-compatible Chat Completions 服务；AI 适配器迁移完成前不要切换 provider。

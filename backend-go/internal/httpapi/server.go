@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"crypto/subtle"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -33,7 +32,6 @@ func (s *Server) Router() *gin.Engine {
 	api := r.Group("/api")
 	api.POST("/auth/register", s.register)
 	api.POST("/auth/login", s.login)
-	api.POST("/auth/verify-invite", s.verifyInvite)
 	api.GET("/auth/profile", s.requireAuth(), s.profile)
 	api.PUT("/auth/change-password", s.requireAuth(), s.changePassword)
 	api.POST("/auth/email/send-code", s.requireAuth(), s.sendEmailCode)
@@ -181,16 +179,6 @@ func userFrom(c *gin.Context) *model.User {
 func (s *Server) token(userID uint) (string, error) {
 	claims := jwt.MapClaims{"sub": fmtUint(userID), "exp": time.Now().Add(time.Duration(s.Cfg.AccessTokenExpireMinutes) * time.Minute).Unix()}
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(s.Cfg.SecretKey))
-}
-func (s *Server) verifyInvite(c *gin.Context) {
-	var in struct {
-		Code string `json:"code"`
-	}
-	if c.ShouldBindJSON(&in) != nil || s.Cfg.InviteCode == "" || subtle.ConstantTimeCompare([]byte(in.Code), []byte(s.Cfg.InviteCode)) != 1 {
-		Error(c, http.StatusBadRequest, "邀请码错误")
-		return
-	}
-	Detail(c, "验证通过")
 }
 func (s *Server) register(c *gin.Context) {
 	var in struct {

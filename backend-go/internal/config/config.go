@@ -15,7 +15,6 @@ type Config struct {
 	AccessTokenExpireMinutes int
 	CORSOrigins              []string
 	FrontendURL              string
-	InviteCode               string
 	UploadDir                string
 	SMTPHost                 string
 	SMTPPort                 int
@@ -36,7 +35,6 @@ func Load() Config {
 		AccessTokenExpireMinutes: getInt("ACCESS_TOKEN_EXPIRE_MINUTES", 1440),
 		CORSOrigins:              split(get("CORS_ORIGINS", "http://localhost")),
 		FrontendURL:              get("FRONTEND_URL", "http://localhost"),
-		InviteCode:               os.Getenv("INVITE_CODE"),
 		UploadDir:                get("UPLOAD_DIR", "/app/data/uploads"),
 		SMTPHost:                 os.Getenv("SMTP_HOST"),
 		SMTPPort:                 getInt("SMTP_PORT", 587),
