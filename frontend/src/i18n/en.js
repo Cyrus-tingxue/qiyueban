@@ -196,14 +196,6 @@ const en = {
     bgmPlay: 'Play BGM',
     nextSong: 'Next track',
 
-    // InviteGate
-    inviteSubtitle: 'Contact Telegram: @CyrusOliver for an invite code:',
-    invitePlaceholder: 'Invite code',
-    inviteEmpty: 'Please enter invite code',
-    inviteFailed: 'Verification failed',
-    verifying: 'Verifying...',
-    enter: 'Enter',
-
     // ErrorBoundary
     pageError: 'Something went wrong',
     reload: 'Reload',

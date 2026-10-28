@@ -197,14 +197,6 @@ const zh = {
     bgmPlay: '播放背景音乐',
     nextSong: '下一首随机播放',
 
-    // InviteGate
-    inviteSubtitle: '请联系 Telegram：@CyrusOliver，输入邀请码：',
-    invitePlaceholder: '邀请码',
-    inviteEmpty: '请输入邀请码',
-    inviteFailed: '验证失败',
-    verifying: '验证中...',
-    enter: '进入',
-
     // ErrorBoundary
     pageError: '页面出错了',
     reload: '重新加载',
