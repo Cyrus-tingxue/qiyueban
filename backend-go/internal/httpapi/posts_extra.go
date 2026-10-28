@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// createPost 创建帖子，并把作者昵称保存为历史快照；实际用户头像在响应时动态读取。
 func (s *Server) createPost(c *gin.Context) {
 	user := userFrom(c)
 	var in struct {
@@ -73,6 +74,8 @@ func (s *Server) updatePost(c *gin.Context) {
 	}
 	c.JSON(200, s.postResponse(&row))
 }
+
+// deletePost 在一个事务中删除帖子、回复及其点赞，避免留下孤儿记录。
 func (s *Server) deletePost(c *gin.Context) {
 	user := userFrom(c)
 	var row model.Post
@@ -104,6 +107,8 @@ func (s *Server) deletePost(c *gin.Context) {
 	tx.Commit()
 	Detail(c, "删除成功")
 }
+
+// togglePostLike 切换帖子点赞，并用数据库表达式更新计数，避免计数低于零。
 func (s *Server) togglePostLike(c *gin.Context) {
 	user := userFrom(c)
 	var row model.Post
@@ -139,6 +144,8 @@ func (s *Server) checkPostLike(c *gin.Context) {
 	liked := s.DB.Where("post_id = ? AND user_id = ?", row.ID, user.ID).First(&like).Error == nil
 	c.JSON(200, gin.H{"like_count": row.LikeCount, "is_liked": liked})
 }
+
+// createReply 创建回复、递增帖子回复数，并为 @提及和回复目标创建通知。
 func (s *Server) createReply(c *gin.Context) {
 	user := userFrom(c)
 	var post model.Post
@@ -173,6 +180,8 @@ func (s *Server) createReply(c *gin.Context) {
 	s.createReplyNotifications(&reply, &post, user)
 	c.JSON(200, gin.H{"id": reply.ID, "content": reply.Content, "image_url": reply.ImageURL, "author": reply.AuthorName, "author_id": reply.AuthorID, "author_avatar": user.Avatar, "like_count": 0, "is_liked": false, "reply_to_id": reply.ReplyToID, "reply_to_user_id": reply.ReplyToUserID, "reply_to_username": reply.ReplyToUsername, "created_at": formatTimeValue(reply.CreatedAt)})
 }
+
+// createReplyNotifications 合并 @username、回复目标和帖子作者，避免同一回复重复通知同一人。
 func (s *Server) createReplyNotifications(reply *model.Reply, post *model.Post, user *model.User) {
 	pattern := regexp.MustCompile(`@([\w\x{4e00}-\x{9fa5}]+)`)
 	matches := pattern.FindAllStringSubmatch(reply.Content, -1)
@@ -248,6 +257,8 @@ func (s *Server) likedReplies(c *gin.Context) {
 	s.DB.Table("reply_likes").Joins("JOIN replies ON replies.id = reply_likes.reply_id").Where("replies.post_id = ? AND reply_likes.user_id = ?", c.Param("id"), user.ID).Pluck("reply_likes.reply_id", &ids)
 	c.JSON(200, ids)
 }
+
+// graveRequest 创建坟贴申请；管理员申请会直接走审核逻辑，普通用户只能申请自己的帖子。
 func (s *Server) graveRequest(c *gin.Context) {
 	user := userFrom(c)
 	var post model.Post
@@ -312,6 +323,8 @@ func (s *Server) reviewGraveEndpoint(c *gin.Context) {
 	s.DB.First(&post, row.PostID)
 	c.JSON(200, s.graveResponse(&row, &post))
 }
+
+// reviewGrave 更新申请状态；批准时会插入系统回复并把帖子标记为不可回复。
 func (s *Server) reviewGrave(row *model.GraveRequest, reviewer uint, approve bool) {
 	if row.Status != "pending" {
 		return

@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// notifications 返回普通通知流；group_invite 由群邀请接口单独处理，以保持前端分类展示。
 func (s *Server) notifications(c *gin.Context) {
 	user := userFrom(c)
 	skip := parseNonNegative(c.Query("skip"), 0)
@@ -84,6 +85,8 @@ func (s *Server) friendRequests(c *gin.Context) {
 	}
 	c.JSON(200, out)
 }
+
+// sendFriendRequest 创建或重置好友申请，并通知目标用户。
 func (s *Server) sendFriendRequest(c *gin.Context) {
 	user := userFrom(c)
 	var in struct {
@@ -160,6 +163,8 @@ func (s *Server) removeFriend(c *gin.Context) {
 	s.DB.Delete(&row)
 	Detail(c, "success")
 }
+
+// messages 只允许已建立好友关系的用户发送私聊消息。
 func (s *Server) messages(c *gin.Context) {
 	user := userFrom(c)
 	var in struct {
@@ -189,6 +194,8 @@ func (s *Server) areFriends(a, b uint) bool {
 	var row model.Friendship
 	return s.DB.Where("status = ? AND ((requester_id = ? AND addressee_id = ?) OR (requester_id = ? AND addressee_id = ?))", "accepted", a, b, b, a).First(&row).Error == nil
 }
+
+// conversationMessages 读取会话并把对方发来的未读消息标记为已读；结果按时间正序返回。
 func (s *Server) conversationMessages(c *gin.Context) {
 	user := userFrom(c)
 	other := c.Param("id")
@@ -212,6 +219,8 @@ func (s *Server) readMessages(c *gin.Context) {
 	s.DB.Model(&model.Message{}).Where("receiver_id = ? AND sender_id = ? AND is_read = ? AND receiver_deleted_at IS NULL", user.ID, c.Param("id"), false).Updates(map[string]any{"is_read": true}).Count(&result.Count)
 	c.JSON(200, gin.H{"status": "success", "marked_read_count": result.Count})
 }
+
+// deleteConversation 只设置当前用户一侧的软删除时间；双方都删除后才物理清理消息。
 func (s *Server) deleteConversation(c *gin.Context) {
 	user := userFrom(c)
 	now := time.Now().UTC()

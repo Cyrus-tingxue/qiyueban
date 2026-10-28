@@ -21,6 +21,7 @@ func ApplyBaseline(database *gorm.DB, migrationDir string) error {
 	return database.Exec(string(content)).Error
 }
 
+// MigrationVersion 解析形如 0001_baseline.sql 的迁移编号，供后续迁移执行器复用。
 func MigrationVersion(filename string) (int64, error) {
 	parts := strings.SplitN(filepath.Base(filename), "_", 2)
 	if len(parts) < 2 {

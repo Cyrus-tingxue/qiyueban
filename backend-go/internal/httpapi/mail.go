@@ -8,6 +8,7 @@ import (
 	"github.com/cyrusxyz/touqi/backend-go/internal/config"
 )
 
+// sendSMTP 发送验证码邮件。TLS 连接使用最低 TLS 1.2，调用方负责把敏感错误转换为安全的 API detail。
 func sendSMTP(cfg config.Config, to, subject, body string) error {
 	if cfg.SMTPHost == "" {
 		return fmt.Errorf("SMTP 未配置")

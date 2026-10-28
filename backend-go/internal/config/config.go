@@ -8,6 +8,9 @@ import (
 	"strings"
 )
 
+// Config 汇总 Go API 运行所需的环境变量。
+//
+// 字段名称与旧 FastAPI 配置保持对应，便于本地和云端继续复用同一个 .env。
 type Config struct {
 	Port                     string
 	DatabaseURL              string
@@ -27,6 +30,7 @@ type Config struct {
 	AnthropicModel           string
 }
 
+// Load 从环境变量读取配置。生产环境应显式设置 SECRET_KEY，避免使用开发默认值。
 func Load() Config {
 	return Config{
 		Port:                     get("PORT", "80"),
@@ -48,6 +52,7 @@ func Load() Config {
 	}
 }
 
+// databaseURL 同时接受旧 Python 使用的 postgresql+psycopg URL 和 Go 驱动使用的 postgres URL。
 func databaseURL() string {
 	if v := os.Getenv("DATABASE_URL"); v != "" {
 		v = strings.TrimPrefix(v, "postgresql+psycopg://")
@@ -65,6 +70,7 @@ func databaseURL() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", url.QueryEscape(user), url.QueryEscape(password), host, port, db)
 }
 
+// get 返回环境变量；缺省值只用于本地开发，敏感配置不应依赖缺省值。
 func get(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
 		return v

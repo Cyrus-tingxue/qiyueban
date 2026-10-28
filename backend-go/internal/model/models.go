@@ -2,6 +2,7 @@ package model
 
 import "time"
 
+// User 对应 users 表。PasswordHash 只用于认证，不能直接序列化给客户端。
 type User struct {
 	ID                         uint       `gorm:"column:id;primaryKey" json:"uid"`
 	Username                   string     `gorm:"column:username;uniqueIndex;size:255;not null" json:"username"`
@@ -24,6 +25,7 @@ type User struct {
 
 func (User) TableName() string { return "users" }
 
+// Announcement 对应当前论坛公告；应用约定只维护第一条记录。
 type Announcement struct {
 	ID        uint      `gorm:"column:id;primaryKey"`
 	Content   string    `gorm:"column:content;not null"`
@@ -32,6 +34,7 @@ type Announcement struct {
 
 func (Announcement) TableName() string { return "announcements" }
 
+// Category 是帖子分类表，名称同时作为帖子上的 category 快照保存。
 type Category struct {
 	ID   uint   `gorm:"column:id;primaryKey"`
 	Name string `gorm:"column:name;uniqueIndex;size:20;not null"`
@@ -40,6 +43,7 @@ type Category struct {
 
 func (Category) TableName() string { return "categories" }
 
+// Post 对应 posts 表。AuthorName 是创建时的昵称快照，AuthorID 仍是关联用户的真实 ID。
 type Post struct {
 	ID         uint       `gorm:"column:id;primaryKey"`
 	Title      string     `gorm:"column:title;size:500;not null"`
@@ -59,6 +63,7 @@ type Post struct {
 
 func (Post) TableName() string { return "posts" }
 
+// Reply 对应 replies 表。ReplyTo 字段用于客户端展示楼中楼引用关系。
 type Reply struct {
 	ID              uint      `gorm:"column:id;primaryKey"`
 	Content         string    `gorm:"column:content;not null"`
@@ -75,6 +80,7 @@ type Reply struct {
 
 func (Reply) TableName() string { return "replies" }
 
+// Like 是帖子点赞表；user_id 与 post_id 由联合唯一约束防止重复点赞。
 type Like struct {
 	ID        uint      `gorm:"column:id;primaryKey"`
 	UserID    uint      `gorm:"column:user_id;not null;uniqueIndex:uq_user_post_like,priority:1"`
@@ -84,6 +90,7 @@ type Like struct {
 
 func (Like) TableName() string { return "likes" }
 
+// ReplyLike 是回复点赞表，唯一约束与 Like 相同但作用于 reply_id。
 type ReplyLike struct {
 	ID        uint      `gorm:"column:id;primaryKey"`
 	UserID    uint      `gorm:"column:user_id;not null;uniqueIndex:uq_user_reply_like,priority:1"`
@@ -93,6 +100,7 @@ type ReplyLike struct {
 
 func (ReplyLike) TableName() string { return "reply_likes" }
 
+// GraveRequest 记录将帖子标记为不可回复（坟贴）的申请和审核状态。
 type GraveRequest struct {
 	ID            uint       `gorm:"column:id;primaryKey"`
 	PostID        uint       `gorm:"column:post_id;not null;index"`
@@ -107,6 +115,7 @@ type GraveRequest struct {
 
 func (GraveRequest) TableName() string { return "grave_requests" }
 
+// IpBan 是管理员维护的 IP 黑名单；中间件会在每个请求进入路由前查询它。
 type IpBan struct {
 	ID          uint      `gorm:"column:id;primaryKey"`
 	IPAddress   string    `gorm:"column:ip_address;uniqueIndex;size:64;not null"`
@@ -117,6 +126,7 @@ type IpBan struct {
 
 func (IpBan) TableName() string { return "ip_bans" }
 
+// Notification 是站内通知。group_invite 通知在普通通知列表中按旧客户端契约排除。
 type Notification struct {
 	ID           uint      `gorm:"column:id;primaryKey"`
 	ReceiverID   uint      `gorm:"column:receiver_id;not null;index"`
@@ -132,6 +142,7 @@ type Notification struct {
 
 func (Notification) TableName() string { return "notifications" }
 
+// Friendship 表示好友申请或已建立的双向好友关系。
 type Friendship struct {
 	ID          uint       `gorm:"column:id;primaryKey"`
 	RequesterID uint       `gorm:"column:requester_id;not null;index"`
@@ -143,6 +154,7 @@ type Friendship struct {
 
 func (Friendship) TableName() string { return "friendships" }
 
+// ChatGroup 是私聊群组；IsPublic 决定用户能否直接加入。
 type ChatGroup struct {
 	ID        uint      `gorm:"column:id;primaryKey"`
 	Name      string    `gorm:"column:name;size:100;not null"`
@@ -153,6 +165,7 @@ type ChatGroup struct {
 
 func (ChatGroup) TableName() string { return "chat_groups" }
 
+// ChatGroupMember 是群成员关系，同时保存该成员的群消息已读游标。
 type ChatGroupMember struct {
 	ID                uint      `gorm:"column:id;primaryKey"`
 	GroupID           uint      `gorm:"column:group_id;not null;index;uniqueIndex:uq_group_member_pair,priority:1"`
@@ -164,6 +177,7 @@ type ChatGroupMember struct {
 
 func (ChatGroupMember) TableName() string { return "chat_group_members" }
 
+// ChatGroupInvite 记录群成员邀请及 accept/reject 状态。
 type ChatGroupInvite struct {
 	ID          uint       `gorm:"column:id;primaryKey"`
 	GroupID     uint       `gorm:"column:group_id;not null;index"`
@@ -176,6 +190,7 @@ type ChatGroupInvite struct {
 
 func (ChatGroupInvite) TableName() string { return "chat_group_invites" }
 
+// Message 是私聊消息。双方删除使用两个独立时间戳，只有双方都删除后才真正清理记录。
 type Message struct {
 	ID                uint       `gorm:"column:id;primaryKey"`
 	SenderID          uint       `gorm:"column:sender_id;not null;index"`
@@ -189,6 +204,7 @@ type Message struct {
 
 func (Message) TableName() string { return "messages" }
 
+// GroupMessage 是群消息，群成员的 last_read_message_id 以它的 ID 作为未读边界。
 type GroupMessage struct {
 	ID        uint      `gorm:"column:id;primaryKey"`
 	GroupID   uint      `gorm:"column:group_id;not null;index"`
@@ -199,6 +215,7 @@ type GroupMessage struct {
 
 func (GroupMessage) TableName() string { return "group_messages" }
 
+// AppVersion 是移动端版本发布记录，按 version_code 选择最新版本。
 type AppVersion struct {
 	ID          uint       `gorm:"column:id;primaryKey"`
 	VersionCode int        `gorm:"column:version_code;not null"`

@@ -12,6 +12,7 @@ import (
 	"github.com/cyrusxyz/touqi/backend-go/internal/db"
 )
 
+// main 仅执行显式 SQL migration，不调用 GORM AutoMigrate，也不会主动删除或重建业务表。
 func main() {
 	cfg := config.Load()
 	database, err := db.Open(cfg)

@@ -19,6 +19,7 @@ import (
 
 var emailPattern = regexp.MustCompile(`^[^@\s]+@[^@\s]+\.[^@\s]+$`)
 
+// bcryptBytes 保持 Python bcrypt 的 72-byte 截断行为，确保旧密码仍可登录。
 func bcryptBytes(value string) []byte {
 	b := []byte(value)
 	if len(b) > 72 {
@@ -42,6 +43,8 @@ func validEmail(value string) bool {
 	_, err := mail.ParseAddress(value)
 	return err == nil
 }
+
+// hashCode 只保存验证码摘要，不把验证码明文写入数据库。
 func hashCode(value string) string {
 	sum := sha256.Sum256([]byte(value))
 	return hex.EncodeToString(sum[:])
@@ -54,6 +57,7 @@ func sameSecret(a, b string) bool {
 	return subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
 }
 
+// searchUsers 为群聊邀请和好友功能提供用户搜索；空查询按旧前端约定返回空数组。
 func (s *Server) searchUsers(c *gin.Context) {
 	term := strings.TrimSpace(c.Query("q"))
 	limit := parseBounded(c.Query("limit"), 10, 1, 100)
@@ -71,6 +75,7 @@ func (s *Server) searchUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+// sendEmailCode 验证当前密码后发送绑定邮箱验证码，验证码有效期为 10 分钟。
 func (s *Server) sendEmailCode(c *gin.Context) {
 	user := userFrom(c)
 	var in struct {
@@ -110,6 +115,7 @@ func (s *Server) sendEmailCode(c *gin.Context) {
 	Detail(c, "验证码已发送，请查看邮箱")
 }
 
+// confirmEmail 校验 pending_email 对应的验证码，成功后才写入正式 email 并标记已验证。
 func (s *Server) confirmEmail(c *gin.Context) {
 	user := userFrom(c)
 	var in struct {
@@ -135,6 +141,7 @@ func (s *Server) confirmEmail(c *gin.Context) {
 	c.JSON(200, s.userResponse(user))
 }
 
+// forgotPassword 对不存在或未验证邮箱返回相同成功提示，避免枚举已注册邮箱。
 func (s *Server) forgotPassword(c *gin.Context) {
 	var in struct {
 		Email string `json:"email"`
@@ -168,6 +175,7 @@ func (s *Server) forgotPassword(c *gin.Context) {
 	c.JSON(200, generic)
 }
 
+// resetPassword 校验邮箱验证码后更新 bcrypt 密码，并立即清除一次性重置凭据。
 func (s *Server) resetPassword(c *gin.Context) {
 	var in struct {
 		Email       string `json:"email"`

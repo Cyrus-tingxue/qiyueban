@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// groupInvites 返回当前用户待处理的群邀请；普通通知列表不会重复返回这些记录。
 func (s *Server) groupInvites(c *gin.Context) {
 	user := userFrom(c)
 	var rows []model.ChatGroupInvite
@@ -66,6 +67,8 @@ func (s *Server) listGroups(c *gin.Context) {
 	}
 	c.JSON(200, out)
 }
+
+// groupSummary 组装群列表/详情共用的摘要，并根据成员已读游标计算未读数。
 func (s *Server) groupSummary(group *model.ChatGroup, userID uint, detail bool) gin.H {
 	var count int64
 	s.DB.Model(&model.ChatGroupMember{}).Where("group_id = ?", group.ID).Count(&count)
@@ -93,6 +96,8 @@ func (s *Server) groupSummary(group *model.ChatGroup, userID uint, detail bool) 
 	}
 	return out
 }
+
+// createGroup 创建群组并把创建者加入成员表；只有好友才会被批量加入初始成员。
 func (s *Server) createGroup(c *gin.Context) {
 	user := userFrom(c)
 	var in struct {
@@ -160,6 +165,8 @@ func (s *Server) leaveGroup(c *gin.Context) {
 	s.DB.Delete(&member)
 	c.JSON(200, gin.H{"status": "success"})
 }
+
+// inviteGroupMember 只有群成员可以邀请自己的好友，并创建待处理邀请和通知。
 func (s *Server) inviteGroupMember(c *gin.Context) {
 	user := userFrom(c)
 	var in struct {
@@ -199,6 +206,8 @@ func (s *Server) inviteGroupMember(c *gin.Context) {
 	s.DB.Create(&model.Notification{ReceiverID: in.UserID, SenderID: &user.ID, SenderName: &inviter, Type: "group_invite", TargetID: &target})
 	c.JSON(200, s.groupInviteResponse(&invite))
 }
+
+// groupMessages 只允许成员读取群消息，并把本次读取到的最后一条消息写入已读游标。
 func (s *Server) groupMessages(c *gin.Context) {
 	user := userFrom(c)
 	groupID := uint(parsePositive(c.Param("id"), 0))
@@ -226,6 +235,8 @@ func (s *Server) groupMessages(c *gin.Context) {
 func (s *Server) groupMessageResponse(row *model.GroupMessage) gin.H {
 	return gin.H{"id": row.ID, "group_id": row.GroupID, "content": row.Content, "created_at": formatTimeValue(row.CreatedAt), "sender_id": row.SenderID, "sender": userBasic(s.loadUser(row.SenderID), true)}
 }
+
+// sendGroupMessage 只有群成员可以发送消息；消息正文为空时仍由数据库约束/客户端校验兜底。
 func (s *Server) sendGroupMessage(c *gin.Context) {
 	user := userFrom(c)
 	groupID := uint(parsePositive(c.Param("id"), 0))

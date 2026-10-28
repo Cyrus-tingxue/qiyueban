@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// banUser 管理员封禁普通用户；不能封禁自己或其他管理员。
 func (s *Server) banUser(c *gin.Context) {
 	if !s.requireAdmin(c) {
 		return
@@ -94,6 +95,8 @@ func (s *Server) listIPBans(c *gin.Context) {
 	}
 	c.JSON(200, out)
 }
+
+// createIPBan 校验 IP 格式后创建或更新黑名单记录；重复 IP 按幂等更新处理。
 func (s *Server) createIPBan(c *gin.Context) {
 	if !s.requireAdmin(c) {
 		return
@@ -132,6 +135,8 @@ func (s *Server) deleteIPBan(c *gin.Context) {
 	s.DB.Delete(&row)
 	Detail(c, "解除 IP 封禁成功")
 }
+
+// updateAnnouncement 更新公告单例；如果数据库还没有记录则先创建第一条。
 func (s *Server) updateAnnouncement(c *gin.Context) {
 	if !s.requireAdmin(c) {
 		return
@@ -152,6 +157,8 @@ func (s *Server) updateAnnouncement(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"content": in.Content})
 }
+
+// createVersion 创建移动端版本记录；/api/app-version 与尾斜杠别名共用此 handler。
 func (s *Server) createVersion(c *gin.Context) {
 	if !s.requireAdmin(c) {
 		return

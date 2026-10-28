@@ -14,6 +14,7 @@ import (
 	"github.com/cyrusxyz/touqi/backend-go/internal/httpapi"
 )
 
+// main 组装配置、数据库和 Gin 路由，并在收到 SIGINT/SIGTERM 时优雅关闭 HTTP 服务。
 func main() {
 	cfg := config.Load()
 	database, err := db.Open(cfg)

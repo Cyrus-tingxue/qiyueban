@@ -18,13 +18,17 @@ import (
 	"gorm.io/gorm"
 )
 
+// Server 保存 HTTP 层共享依赖。当前阶段仍由 handler 直接使用 DB，后续按领域逐步移入 service。
 type Server struct {
 	DB  *gorm.DB
 	Cfg config.Config
 }
 
+// New 创建 HTTP API 依赖容器。
 func New(dbConn *gorm.DB, cfg config.Config) *Server { return &Server{DB: dbConn, Cfg: cfg} }
 
+// Router 注册全部兼容现有前端和移动端的 API 路由。
+// 尾斜杠别名和动态 action 路径是已有客户端契约的一部分，不要随意合并。
 func (s *Server) Router() *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery(), s.cors(), s.ipBan())
@@ -100,6 +104,7 @@ func (s *Server) Router() *gin.Engine {
 	return r
 }
 
+// cors 实现简单的白名单 CORS，并处理浏览器预检请求。
 func (s *Server) cors() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
@@ -119,6 +124,8 @@ func (s *Server) cors() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// ipBan 在路由处理前查询 IP 黑名单；查询失败时放行请求，避免数据库短暂异常造成全站不可用。
 func (s *Server) ipBan() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := c.ClientIP()
@@ -131,6 +138,9 @@ func (s *Server) ipBan() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// requireAuth 校验兼容旧客户端的 Bearer JWT，并把完整用户放入 Gin context。
+// JWT 的 sub 必须是字符串用户 ID，签名算法固定为 HS256。
 func (s *Server) requireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := strings.TrimSpace(strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer "))
@@ -176,10 +186,14 @@ func userFrom(c *gin.Context) *model.User {
 	user, _ := value.(*model.User)
 	return user
 }
+
+// token 创建与旧 Python 服务兼容的 JWT；过期时间由 ACCESS_TOKEN_EXPIRE_MINUTES 控制。
 func (s *Server) token(userID uint) (string, error) {
 	claims := jwt.MapClaims{"sub": fmtUint(userID), "exp": time.Now().Add(time.Duration(s.Cfg.AccessTokenExpireMinutes) * time.Minute).Unix()}
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(s.Cfg.SecretKey))
 }
+
+// register 创建 bcrypt 用户并立即签发 JWT；avatar 缺省值保持为 eye。
 func (s *Server) register(c *gin.Context) {
 	var in struct {
 		Username string  `json:"username"`
@@ -218,6 +232,8 @@ func (s *Server) register(c *gin.Context) {
 	token, _ := s.token(user.ID)
 	c.JSON(200, gin.H{"token": token, "user": s.userResponse(&user)})
 }
+
+// login 校验现有 bcrypt hash，并保留封禁用户的 403 语义。
 func (s *Server) login(c *gin.Context) {
 	var in struct {
 		Username string `json:"username"`
@@ -270,6 +286,8 @@ func (s *Server) categories(c *gin.Context) {
 	s.DB.Order("id asc").Find(&rows)
 	c.JSON(200, rows)
 }
+
+// posts 返回分页帖子列表，公开访问时不强制登录；过滤与排序参数沿用前端调用契约。
 func (s *Server) posts(c *gin.Context) {
 	var rows []model.Post
 	q := s.DB
@@ -310,6 +328,8 @@ func (s *Server) post(c *gin.Context) {
 	}
 	c.JSON(200, s.postResponse(&row))
 }
+
+// postResponse 将数据库模型映射为帖子 API 对象。author_avatar 需要从 users 表读取，不能依赖历史快照为空。
 func (s *Server) postResponse(row *model.Post) gin.H {
 	authorAvatar := ""
 	if author := s.loadUser(row.AuthorID); author != nil {
@@ -334,6 +354,8 @@ func (s *Server) replies(c *gin.Context) {
 	c.JSON(200, out)
 }
 func (s *Server) announcement(c *gin.Context) {}
+
+// getAnnouncement 返回公告单例；不存在时创建空公告，保持前端始终收到对象而不是 404。
 func (s *Server) getAnnouncement(c *gin.Context) {
 	var row model.Announcement
 	if s.DB.Order("id asc").First(&row).Error != nil {
@@ -342,6 +364,8 @@ func (s *Server) getAnnouncement(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"content": row.Content})
 }
+
+// latestVersion 按 version_code 倒序返回最新移动端版本；没有版本时保留旧英文 detail。
 func (s *Server) latestVersion(c *gin.Context) {
 	var row model.AppVersion
 	if s.DB.Order("version_code desc").First(&row).Error != nil {
@@ -350,6 +374,9 @@ func (s *Server) latestVersion(c *gin.Context) {
 	}
 	c.JSON(200, row)
 }
+
+// uploadImage 接收 multipart 字段 file，只允许图片扩展名和 image/* MIME 类型。
+// 文件保存到共享的 data/uploads，以便 Nginx 和 API 使用同一目录提供静态资源。
 func (s *Server) uploadImage(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
