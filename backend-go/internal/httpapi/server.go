@@ -307,7 +307,10 @@ func (s *Server) posts(c *gin.Context) {
 	size := parseBounded(c.Query("page_size"), 10, 1, 50)
 	order := "created_at DESC"
 	if c.Query("sort") == "likes" {
-		order = "like_count DESC, created_at DESC"
+		// 精品按“点赞数 + 时间衰减”排序：新帖的基础热度更高，老帖的热度
+		// 会逐渐下降，但高赞帖不会因为短时间没有新增点赞就立刻消失。
+		// 240 小时约为一个衰减周期，+1 让零赞新帖也能参与竞争。
+		order = "(like_count + 1) * EXP(-GREATEST(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - created_at)) / 3600.0, 0) / 240.0) DESC, created_at DESC"
 	}
 	q.Order(order).Offset((page - 1) * size).Limit(size).Find(&rows)
 	items := make([]gin.H, 0, len(rows))
