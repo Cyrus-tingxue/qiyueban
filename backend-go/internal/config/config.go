@@ -28,6 +28,10 @@ type Config struct {
 	AnthropicAuthToken       string
 	AnthropicBaseURL         string
 	AnthropicModel           string
+	// AIBaseURL/AIModel/AIAuthToken 兼容旧 Python 的 OpenAI-compatible 配置命名。
+	AIBaseURL   string
+	AIModel     string
+	AIAuthToken string
 }
 
 // Load 从环境变量读取配置。生产环境应显式设置 SECRET_KEY，避免使用开发默认值。
@@ -49,6 +53,9 @@ func Load() Config {
 		AnthropicAuthToken:       os.Getenv("ANTHROPIC_AUTH_TOKEN"),
 		AnthropicBaseURL:         os.Getenv("ANTHROPIC_BASE_URL"),
 		AnthropicModel:           os.Getenv("ANTHROPIC_MODEL"),
+		AIBaseURL:                os.Getenv("ANTHROPIC_BASE_URL"),
+		AIModel:                  os.Getenv("ANTHROPIC_MODEL"),
+		AIAuthToken:              os.Getenv("ANTHROPIC_AUTH_TOKEN"),
 	}
 }
 

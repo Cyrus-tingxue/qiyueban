@@ -1,14 +1,12 @@
 package httpapi
 
 import (
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/cyrusxyz/touqi/backend-go/internal/model"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 // notifications 返回普通通知流；group_invite 由群邀请接口单独处理，以保持前端分类展示。
@@ -274,6 +272,3 @@ func valueTime(pointer *time.Time, fallback time.Time) time.Time {
 	}
 	return fallback
 }
-
-var _ = http.StatusOK
-var _ = gorm.ErrRecordNotFound

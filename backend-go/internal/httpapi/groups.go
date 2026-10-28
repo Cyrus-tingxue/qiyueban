@@ -1,13 +1,11 @@
 package httpapi
 
 import (
-	"net/http"
 	"strings"
 	"time"
 
 	"github.com/cyrusxyz/touqi/backend-go/internal/model"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 // groupInvites 返回当前用户待处理的群邀请；普通通知列表不会重复返回这些记录。
@@ -60,7 +58,10 @@ func (s *Server) respondGroupInvite(c *gin.Context) {
 func (s *Server) listGroups(c *gin.Context) {
 	user := userFrom(c)
 	var groups []model.ChatGroup
-	s.DB.Order("created_at desc").Find(&groups)
+	if err := s.DB.Order("created_at desc").Find(&groups).Error; err != nil {
+		Error(c, 500, "群聊列表加载失败")
+		return
+	}
 	out := make([]gin.H, 0, len(groups))
 	for _, group := range groups {
 		out = append(out, s.groupSummary(&group, user.ID, false))
@@ -79,6 +80,9 @@ func (s *Server) groupSummary(group *model.ChatGroup, userID uint, detail bool) 
 	out := gin.H{"id": group.ID, "name": group.Name, "is_public": group.IsPublic, "member_count": count, "is_member": ismember, "unread_count": 0, "created_at": formatTimeValue(group.CreatedAt), "creator": userBasic(s.loadUser(group.CreatorID), group.CreatorID == userID), "last_message": nil}
 	if latest.ID > 0 {
 		out["last_message"] = s.groupMessageResponse(&latest)
+	} else {
+		// Gin 将 nil 序列化为 null；这里显式保留客户端期待的字段。
+		out["last_message"] = nil
 	}
 	if ismember {
 		var unread int64
@@ -273,6 +277,3 @@ func uniqueIDs(ids []uint) []uint {
 	}
 	return out
 }
-
-var _ = http.StatusOK
-var _ = gorm.ErrRecordNotFound

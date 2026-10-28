@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"net/http"
 	"regexp"
 	"strings"
 	"time"
@@ -178,6 +177,9 @@ func (s *Server) createReply(c *gin.Context) {
 	tx.Model(&post).UpdateColumn("reply_count", gorm.Expr("reply_count + 1"))
 	tx.Commit()
 	s.createReplyNotifications(&reply, &post, user)
+	if strings.Contains(reply.Content, "@小柒") {
+		go s.generateXiaoqiReply(reply, post, user)
+	}
 	c.JSON(200, gin.H{"id": reply.ID, "content": reply.Content, "image_url": reply.ImageURL, "author": reply.AuthorName, "author_id": reply.AuthorID, "author_avatar": user.Avatar, "like_count": 0, "is_liked": false, "reply_to_id": reply.ReplyToID, "reply_to_user_id": reply.ReplyToUserID, "reply_to_username": reply.ReplyToUsername, "created_at": formatTimeValue(reply.CreatedAt)})
 }
 
@@ -368,6 +370,3 @@ func (s *Server) markGrave(c *gin.Context) {
 	s.DB.Save(&post)
 	c.JSON(200, s.postResponse(&post))
 }
-
-var _ = http.StatusOK
-var _ = strings.TrimSpace
