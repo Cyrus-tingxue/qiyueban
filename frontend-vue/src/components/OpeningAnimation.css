@@ -1,0 +1,275 @@
+.opening-animation {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    overflow: hidden;
+    isolation: isolate;
+    background: #020305;
+    color: #edd0b8;
+}
+
+.opening-animation__video,
+.opening-animation__color-grade,
+.opening-animation__film-frame,
+.opening-animation__grain,
+.opening-animation__curtain,
+.opening-animation__watermark-mask {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.opening-animation__video {
+    z-index: 0;
+    display: block;
+    object-fit: cover;
+    object-position: center;
+    filter: saturate(0.78) contrast(1.1) brightness(0.68);
+    transform: scale(1.06);
+    animation: opening-video 3.53s ease both;
+}
+
+.opening-animation__color-grade {
+    z-index: 1;
+    background:
+        linear-gradient(90deg, rgba(5, 2, 5, 0.68), transparent 24%, transparent 76%, rgba(5, 2, 5, 0.7)),
+        linear-gradient(0deg, rgba(5, 2, 5, 0.78), transparent 27%, rgba(25, 2, 9, 0.24) 74%, rgba(0, 0, 0, 0.62)),
+        radial-gradient(ellipse at 50% 47%, transparent 25%, rgba(104, 10, 25, 0.13) 67%, rgba(0, 0, 0, 0.66) 100%);
+    pointer-events: none;
+}
+
+.opening-animation__film-frame {
+    z-index: 2;
+    pointer-events: none;
+    border: clamp(12px, 2.4vw, 34px) solid #030305;
+    box-shadow: inset 0 0 0 1px rgba(215, 126, 75, 0.18), inset 0 0 70px rgba(0, 0, 0, 0.72);
+}
+
+.opening-animation__grain {
+    z-index: 3;
+    pointer-events: none;
+    opacity: 0.14;
+    mix-blend-mode: screen;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 220 220' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+    animation: opening-grain 0.19s steps(2) infinite;
+}
+
+.opening-animation__curtain {
+    z-index: 4;
+    width: 20%;
+    pointer-events: none;
+    background:
+        linear-gradient(90deg, rgba(15, 1, 6, 0.95), rgba(121, 11, 28, 0.72) 45%, rgba(28, 2, 10, 0.9)),
+        repeating-linear-gradient(82deg, rgba(227, 90, 69, 0.2) 0 2px, transparent 2px 36px);
+    box-shadow: 0 0 55px rgba(0, 0, 0, 0.72);
+    animation: opening-curtain 3.53s cubic-bezier(0.74, 0, 0.22, 1) both;
+}
+
+.opening-animation__curtain--left {
+    right: auto;
+    transform-origin: left center;
+}
+
+.opening-animation__curtain--right {
+    left: auto;
+    transform-origin: right center;
+    animation-name: opening-curtain-right;
+}
+
+.opening-animation__watermark-mask {
+    z-index: 5;
+    height: 16%;
+    pointer-events: none;
+    background: linear-gradient(90deg, rgba(3, 3, 5, 0.72), rgba(3, 3, 5, 0.26) 56%, rgba(3, 3, 5, 0));
+    filter: blur(3px);
+    opacity: 0.76;
+}
+
+.opening-animation__watermark-mask--top {
+    bottom: auto;
+    background: linear-gradient(180deg, rgba(3, 3, 5, 0.76), transparent);
+}
+
+.opening-animation__watermark-mask--bottom {
+    top: auto;
+    background: linear-gradient(0deg, rgba(3, 3, 5, 0.8), transparent);
+}
+
+.opening-animation__skip {
+    position: absolute;
+    top: 28px;
+    right: 32px;
+    z-index: 10;
+    padding: 9px 16px;
+    border: 1px solid rgba(218, 137, 91, 0.44);
+    color: rgba(242, 213, 190, 0.84);
+    background: rgba(15, 4, 8, 0.42);
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.opening-animation__skip:hover,
+.opening-animation__skip:focus-visible {
+    border-color: #e14c44;
+    color: #fff5e6;
+    background: rgba(130, 17, 29, 0.54);
+    box-shadow: 0 0 22px rgba(194, 27, 44, 0.34);
+    outline: none;
+}
+
+.opening-animation__title {
+    position: absolute;
+    top: 53%;
+    left: 50%;
+    z-index: 8;
+    width: min(88vw, 760px);
+    text-align: center;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    animation: opening-title 3.53s ease both;
+}
+
+.opening-animation__title-kicker {
+    margin-bottom: 18px;
+    color: #dda06f;
+    font-family: var(--font-serif);
+    font-size: clamp(0.68rem, 1.12vw, 0.88rem);
+    letter-spacing: clamp(6px, 1.5vw, 15px);
+    text-indent: clamp(6px, 1.5vw, 15px);
+    text-shadow: 0 0 18px rgba(161, 42, 33, 0.8);
+}
+
+.opening-animation__title h1 {
+    color: #e74443;
+    font-family: 'Zhi Mang Xing', 'Ma Shan Zheng', 'Long Cang', 'STKaiti', var(--font-serif);
+    font-size: clamp(5rem, 13vw, 11rem);
+    font-weight: 900;
+    letter-spacing: clamp(13px, 2.6vw, 29px);
+    line-height: 0.9;
+    text-indent: clamp(13px, 2.6vw, 29px);
+    text-shadow: 0 0 12px rgba(225, 45, 48, 0.9), 0 0 65px rgba(138, 13, 28, 0.9);
+}
+
+.opening-animation__rule {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 27px;
+    color: rgba(240, 214, 193, 0.86);
+    font-size: clamp(0.7rem, 1.25vw, 0.92rem);
+    letter-spacing: clamp(3px, 0.85vw, 8px);
+    text-indent: clamp(3px, 0.85vw, 8px);
+}
+
+.opening-animation__rule i {
+    display: block;
+    width: clamp(32px, 8vw, 100px);
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #d17b55);
+}
+
+.opening-animation__rule i:last-child { transform: rotate(180deg); }
+
+.opening-animation__seal {
+    display: grid;
+    place-items: center;
+    width: 55px;
+    height: 55px;
+    margin: 26px auto 0;
+    border: 2px solid rgba(207, 79, 63, 0.84);
+    border-radius: 4px;
+    color: rgba(221, 103, 74, 0.92);
+    font-family: var(--font-serif);
+    font-size: 1.7rem;
+    box-shadow: 0 0 22px rgba(186, 28, 36, 0.28);
+    transform: rotate(-8deg);
+}
+
+.opening-animation__progress {
+    position: absolute;
+    right: 32px;
+    bottom: 29px;
+    left: 32px;
+    z-index: 10;
+    height: 1px;
+    overflow: hidden;
+    background: rgba(223, 132, 82, 0.2);
+}
+
+.opening-animation__progress i {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #c95c48;
+    transform-origin: left;
+    animation: opening-progress 3.53s linear both;
+}
+
+.opening-fade-enter-active,
+.opening-fade-leave-active { transition: opacity 0.8s ease; }
+.opening-fade-enter-from,
+.opening-fade-leave-to { opacity: 0; }
+
+@keyframes opening-video {
+    0% { opacity: 0; transform: scale(1.14); }
+    7% { opacity: 1; }
+    22% { transform: scale(1.09) translate3d(0, 0, 0); }
+    57% { transform: scale(1.04) translate3d(-0.6%, -0.4%, 0); }
+    88% { transform: scale(1.01) translate3d(0.4%, 0, 0); }
+    100% { opacity: 0; transform: scale(1.04); }
+}
+
+@keyframes opening-curtain {
+    0%, 13% { transform: scaleX(1); }
+    34%, 80% { transform: scaleX(0.18); }
+    100% { transform: translateX(-120%) scaleX(0.12); }
+}
+
+@keyframes opening-curtain-right {
+    0%, 13% { transform: scaleX(1); }
+    34%, 80% { transform: scaleX(0.18); }
+    100% { transform: translateX(120%) scaleX(0.12); }
+}
+
+@keyframes opening-title {
+    0%, 59% { opacity: 0; transform: translate(-50%, -45%) scale(1.08); filter: blur(12px); }
+    70%, 89% { opacity: 1; transform: translate(-50%, -50%) scale(1); filter: blur(0); }
+    100% { opacity: 0; transform: translate(-50%, -53%) scale(.96); filter: blur(7px); }
+}
+
+@keyframes opening-progress {
+    0% { transform: scaleX(0); }
+    100% { transform: scaleX(1); }
+}
+
+@keyframes opening-grain {
+    0% { transform: translate(0, 0); }
+    25% { transform: translate(1%, -1%); }
+    50% { transform: translate(-1%, 1%); }
+    75% { transform: translate(1%, 1%); }
+    100% { transform: translate(-1%, -1%); }
+}
+
+@media (max-width: 768px) {
+    .opening-animation__skip {
+        top: 16px;
+        right: 16px;
+        padding: 8px 11px;
+        font-size: .68rem;
+    }
+
+    .opening-animation__curtain { width: 27%; }
+    .opening-animation__title { top: 52%; width: 94vw; }
+    .opening-animation__title h1 { font-size: clamp(4rem, 20vw, 7rem); }
+    .opening-animation__rule { gap: 8px; margin-top: 21px; }
+    .opening-animation__seal { width: 45px; height: 45px; margin-top: 20px; font-size: 1.35rem; }
+    .opening-animation__progress { right: 16px; bottom: 17px; left: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .opening-animation { display: none; }
+}

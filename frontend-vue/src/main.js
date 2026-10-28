@@ -12,6 +12,7 @@ import MessagesPage from './pages/MessagesPage.vue';
 import ChatPage from './pages/ChatPage.vue';
 import LoginPage from './pages/LoginPage.vue';
 import ResetPasswordPage from './pages/ResetPasswordPage.vue';
+import OpeningAnimation from './components/OpeningAnimation.vue';
 import './index.css';
 import './App.css';
 
@@ -32,6 +33,6 @@ const App = { setup() {
   const { playSound } = sound;
   const handler = (e) => { if (e.target.closest('button, a, .blinking-eye, .post-item, .login-modal-close')) playSound('click'); };
   onMounted(() => document.addEventListener('click', handler, true)); onUnmounted(() => document.removeEventListener('click', handler, true));
-  return () => h(ErrorBoundary, null, { default: () => h(RouterView) });
+  return () => h(ErrorBoundary, null, { default: () => [h(OpeningAnimation), h(RouterView)] });
 }};
 createApp(App).use(router).mount('#root');

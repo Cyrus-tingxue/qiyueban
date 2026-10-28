@@ -60,6 +60,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+body.opening-active {
+  overflow: hidden;
+}
+
 #root {
   min-height: 100vh;
   display: flex;
