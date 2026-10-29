@@ -22,14 +22,16 @@
       <button class="opening-animation__skip" type="button" @click="close">跳过开场</button>
 
       <div class="opening-animation__title" aria-hidden="true">
-        <p class="opening-animation__title-kicker">夜半 · 禁语 · 回声</p>
-        <h1>柒月半</h1>
+        <div class="opening-animation__title-kicker">
+          <span>夜半录</span><b>·</b><span>第一卷</span><b>·</b><span>慎入</span>
+        </div>
+        <h1><span>柒</span><span>月</span><span>半</span></h1>
         <div class="opening-animation__rule">
           <i></i>
-          <span>听见夜里的另一种声音</span>
+          <span>月落之后，勿问归人</span>
           <i></i>
         </div>
-        <div class="opening-animation__seal">柒</div>
+        <div class="opening-animation__seal">禁</div>
       </div>
 
       <div class="opening-animation__progress" aria-hidden="true"><i></i></div>

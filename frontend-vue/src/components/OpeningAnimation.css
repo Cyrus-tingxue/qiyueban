@@ -121,72 +121,102 @@
 
 .opening-animation__title {
     position: absolute;
-    top: 53%;
-    left: 50%;
+    top: 64%;
+    left: 10%;
     z-index: 8;
-    width: min(88vw, 760px);
-    text-align: center;
+    width: min(78vw, 470px);
+    padding-left: 26px;
+    text-align: left;
     pointer-events: none;
-    transform: translate(-50%, -50%);
+    transform: translateY(-50%);
     opacity: 0;
     animation: opening-title 3.53s ease both;
 }
 
+.opening-animation__title::before {
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    left: 0;
+    width: 1px;
+    background: linear-gradient(180deg, transparent, rgba(210, 145, 91, 0.82) 18%, rgba(210, 145, 91, 0.82) 82%, transparent);
+    content: '';
+}
+
 .opening-animation__title-kicker {
-    margin-bottom: 18px;
-    color: #dda06f;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 17px;
+    color: rgba(225, 193, 164, 0.86);
     font-family: var(--font-serif);
-    font-size: clamp(0.68rem, 1.12vw, 0.88rem);
-    letter-spacing: clamp(6px, 1.5vw, 15px);
-    text-indent: clamp(6px, 1.5vw, 15px);
-    text-shadow: 0 0 18px rgba(161, 42, 33, 0.8);
+    font-size: clamp(0.66rem, 1.05vw, 0.82rem);
+    letter-spacing: 0.28em;
+}
+
+.opening-animation__title-kicker b {
+    color: #b95a45;
+    font-size: 0.65em;
+    font-weight: 400;
 }
 
 .opening-animation__title h1 {
-    color: #e74443;
-    font-family: 'Zhi Mang Xing', 'Ma Shan Zheng', 'Long Cang', 'STKaiti', var(--font-serif);
-    font-size: clamp(5rem, 13vw, 11rem);
-    font-weight: 900;
-    letter-spacing: clamp(13px, 2.6vw, 29px);
-    line-height: 0.9;
-    text-indent: clamp(13px, 2.6vw, 29px);
-    text-shadow: 0 0 12px rgba(225, 45, 48, 0.9), 0 0 65px rgba(138, 13, 28, 0.9);
+    display: flex;
+    gap: 0.15em;
+    color: #ead7c3;
+    font-family: 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
+    font-size: clamp(3.7rem, 7.5vw, 6.6rem);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    line-height: 0.92;
+    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.54);
+}
+
+.opening-animation__title h1 span {
+    display: inline-block;
+}
+
+.opening-animation__title h1 span:nth-child(2) {
+    color: #c94b43;
 }
 
 .opening-animation__rule {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 27px;
-    color: rgba(240, 214, 193, 0.86);
-    font-size: clamp(0.7rem, 1.25vw, 0.92rem);
-    letter-spacing: clamp(3px, 0.85vw, 8px);
-    text-indent: clamp(3px, 0.85vw, 8px);
+    justify-content: flex-start;
+    gap: 12px;
+    margin-top: 22px;
+    color: rgba(236, 211, 190, 0.82);
+    font-family: var(--font-serif);
+    font-size: clamp(0.68rem, 1.1vw, 0.86rem);
+    letter-spacing: 0.2em;
 }
 
 .opening-animation__rule i {
     display: block;
-    width: clamp(32px, 8vw, 100px);
+    width: clamp(28px, 4vw, 58px);
     height: 1px;
-    background: linear-gradient(90deg, transparent, #d17b55);
+    background: #bd7655;
 }
 
-.opening-animation__rule i:last-child { transform: rotate(180deg); }
+.opening-animation__rule i:last-child {
+    width: 16px;
+    background: linear-gradient(90deg, #bd7655, transparent);
+}
 
 .opening-animation__seal {
+    position: absolute;
+    top: 7px;
+    right: 9px;
     display: grid;
     place-items: center;
-    width: 55px;
-    height: 55px;
-    margin: 26px auto 0;
-    border: 2px solid rgba(207, 79, 63, 0.84);
-    border-radius: 4px;
-    color: rgba(221, 103, 74, 0.92);
+    width: 42px;
+    height: 48px;
+    border: 1px solid rgba(191, 83, 67, 0.86);
+    color: rgba(211, 111, 79, 0.94);
     font-family: var(--font-serif);
-    font-size: 1.7rem;
-    box-shadow: 0 0 22px rgba(186, 28, 36, 0.28);
-    transform: rotate(-8deg);
+    font-size: 1.35rem;
+    transform: rotate(7deg);
 }
 
 .opening-animation__progress {
@@ -236,9 +266,9 @@
 }
 
 @keyframes opening-title {
-    0%, 59% { opacity: 0; transform: translate(-50%, -45%) scale(1.08); filter: blur(12px); }
-    70%, 89% { opacity: 1; transform: translate(-50%, -50%) scale(1); filter: blur(0); }
-    100% { opacity: 0; transform: translate(-50%, -53%) scale(.96); filter: blur(7px); }
+    0%, 59% { opacity: 0; transform: translateY(-45%) translateX(-18px) scale(1.04); filter: blur(12px); }
+    70%, 89% { opacity: 1; transform: translateY(-50%) translateX(0) scale(1); filter: blur(0); }
+    100% { opacity: 0; transform: translateY(-54%) translateX(-8px) scale(.98); filter: blur(7px); }
 }
 
 @keyframes opening-progress {
@@ -263,10 +293,11 @@
     }
 
     .opening-animation__curtain { width: 27%; }
-    .opening-animation__title { top: 52%; width: 94vw; }
-    .opening-animation__title h1 { font-size: clamp(4rem, 20vw, 7rem); }
-    .opening-animation__rule { gap: 8px; margin-top: 21px; }
-    .opening-animation__seal { width: 45px; height: 45px; margin-top: 20px; font-size: 1.35rem; }
+    .opening-animation__title { top: 67%; left: 8%; width: 84vw; padding-left: 18px; }
+    .opening-animation__title h1 { font-size: clamp(3.5rem, 18vw, 6.4rem); }
+    .opening-animation__title-kicker { gap: 7px; letter-spacing: 0.18em; }
+    .opening-animation__rule { gap: 8px; margin-top: 18px; font-size: .68rem; letter-spacing: .12em; }
+    .opening-animation__seal { top: 2px; right: 0; width: 36px; height: 42px; font-size: 1.15rem; }
     .opening-animation__progress { right: 16px; bottom: 17px; left: 16px; }
 }
 
