@@ -217,14 +217,14 @@ func (GroupMessage) TableName() string { return "group_messages" }
 
 // AppVersion 是移动端版本发布记录，按 version_code 选择最新版本。
 type AppVersion struct {
-	ID          uint       `gorm:"column:id;primaryKey"`
-	VersionCode int        `gorm:"column:version_code;not null"`
-	VersionName string     `gorm:"column:version_name;not null"`
-	DownloadURL string     `gorm:"column:download_url;not null"`
-	UpdateLog   string     `gorm:"column:update_log;not null"`
-	ForceUpdate bool       `gorm:"column:force_update"`
-	CreatedAt   time.Time  `gorm:"column:created_at"`
-	UpdatedAt   *time.Time `gorm:"column:updated_at"`
+	ID          uint       `gorm:"column:id;primaryKey" json:"id"`
+	VersionCode int        `gorm:"column:version_code;not null" json:"version_code"`
+	VersionName string     `gorm:"column:version_name;not null" json:"version_name"`
+	DownloadURL string     `gorm:"column:download_url;not null" json:"download_url"`
+	UpdateLog   string     `gorm:"column:update_log;not null" json:"update_log"`
+	ForceUpdate bool       `gorm:"column:force_update" json:"force_update"`
+	CreatedAt   time.Time  `gorm:"column:created_at" json:"created_at"`
+	UpdatedAt   *time.Time `gorm:"column:updated_at" json:"updated_at"`
 }
 
 func (AppVersion) TableName() string { return "app_versions" }

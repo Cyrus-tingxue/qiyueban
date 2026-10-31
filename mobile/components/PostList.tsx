@@ -73,7 +73,7 @@ export default function PostList({ category, sort, search }: PostListProps) {
       data={posts}
       keyExtractor={(item: any) => item.id.toString()}
       renderItem={({ item }) => (
-        <PostItem post={item} onPress={() => router.push({ pathname: `/post/${item.id}`, params: { initialPost: JSON.stringify(item) } })} />
+        <PostItem post={item} onPress={() => router.push({ pathname: '/post/[id]', params: { id: String(item.id), initialPost: JSON.stringify(item) } })} />
       )}
       ListFooterComponent={
         <View style={styles.emptyContainer}>

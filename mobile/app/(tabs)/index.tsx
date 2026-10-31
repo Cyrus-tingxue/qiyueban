@@ -78,7 +78,7 @@ export default function HomeScreen() {
       indicatorStyle={{ backgroundColor: Colors.primary }}
       style={{ backgroundColor: Colors.background, elevation: 0, shadowOpacity: 0, borderBottomWidth: 1, borderBottomColor: Colors.border }}
       tabStyle={{ width: 'auto', paddingHorizontal: 16 }}
-      renderLabel={({ route, focused }) => (
+      renderLabel={({ route, focused }: any) => (
         <Text style={{ 
           color: focused ? Colors.textOnPrimary : Colors.textSecondary,
           fontWeight: 'bold',

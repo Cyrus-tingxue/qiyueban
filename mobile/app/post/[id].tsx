@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -36,11 +36,7 @@ export default function PostDetailScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, [id, isLoggedIn]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const [postData, repliesDataResponse] = await Promise.all([
@@ -86,7 +82,11 @@ export default function PostDetailScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, isLoggedIn, user, t]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleLikePost = async () => {
     if (!isLoggedIn) return Alert.alert('Notice', t('loginToLike'));
@@ -188,8 +188,8 @@ export default function PostDetailScreen() {
                 <TouchableOpacity style={styles.actionBtn} onPress={async () => {
                   if (isFriend) {
                     router.push({
-                      pathname: `/chat/private/${post.author_id}`,
-                      params: { name: post.author, avatar: post.author_avatar }
+                      pathname: '/chat/private/[userId]',
+                      params: { userId: String(post.author_id), name: post.author, avatar: post.author_avatar }
                     });
                   } else {
                     try {

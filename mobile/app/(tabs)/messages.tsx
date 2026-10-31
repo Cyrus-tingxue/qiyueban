@@ -180,8 +180,8 @@ export default function MessagesScreen() {
                   <TouchableOpacity 
                     style={styles.listItem} 
                     onPress={() => router.push({
-                      pathname: `/chat/private/${f.uid}`,
-                      params: { name: f.nickname || f.username, avatar: f.avatar }
+                      pathname: '/chat/private/[userId]',
+                      params: { userId: String(f.uid), name: f.nickname || f.username, avatar: f.avatar }
                     })}
                     onLongPress={() => {
                       Alert.alert(t('deleteFriend') || '删除好友', `确定要删除好友 ${f.nickname || f.username} 吗？`, [
@@ -316,7 +316,7 @@ export default function MessagesScreen() {
       activeColor={Colors.primary}
       inactiveColor={Colors.textSecondary}
       labelStyle={{ fontWeight: 'bold' }}
-      getLabelText={({ route }) => route.title}
+      getLabelText={({ route }: any) => route.title}
     />
   );
 

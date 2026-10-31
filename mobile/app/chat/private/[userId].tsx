@@ -47,7 +47,7 @@ export default function PrivateChatScreen() {
         const sampleMsg = newBatch[0];
         const otherUserInfo = sampleMsg.sender_id === Number(userId) ? sampleMsg.sender : sampleMsg.receiver;
         if (otherUserInfo) {
-          setOtherUser(prev => ({ ...prev, ...otherUserInfo }));
+          setOtherUser((prev: any) => ({ ...prev, ...otherUserInfo }));
         }
       }
 

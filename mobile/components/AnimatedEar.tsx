@@ -7,7 +7,7 @@ import Svg, { Defs, G, Path, Circle, Rect, Ellipse, Line, LinearGradient, Radial
  * 飘动的符纸 - 道教黄符，朱砂符文
  * 透明背景，悬浮飘动动画
  */
-function AnimatedEar({ onClick, isAnimating = true, size = 90 }) {
+function AnimatedEar({ isAnimating = true, size = 90 }) {
     
     const anim = useRef(new Animated.Value(0)).current;
     useEffect(() => {

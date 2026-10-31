@@ -3,7 +3,7 @@ import { Animated } from 'react-native';
 import Svg, { Defs, G, Path, Circle, Rect, Ellipse, Line, LinearGradient, RadialGradient, Stop, ClipPath, Text as SvgText } from 'react-native-svg';
 
 
-function AnimatedNose({ onClick, isAnimating = true, size = 90 }) {
+function AnimatedNose({ isAnimating = true, size = 90 }) {
     
     const anim = useRef(new Animated.Value(0)).current;
     useEffect(() => {

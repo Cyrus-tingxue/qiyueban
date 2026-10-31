@@ -180,7 +180,7 @@ export default function MyScreen() {
       activeColor={Colors.primary}
       inactiveColor={Colors.textSecondary}
       labelStyle={{ fontWeight: 'bold', fontSize: 14 }}
-      getLabelText={({ route }) => route.title}
+      getLabelText={({ route }: any) => route.title}
     />
   );
 

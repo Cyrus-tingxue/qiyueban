@@ -143,18 +143,6 @@ export const messageService = {
     return response.data;
   },
 
-  acceptGroupInvite: async (inviteId: number) => {
-    const response = await api.post(`/messages/group-invites/${inviteId}/accept`);
-    emitMessageDataChanged('group-invite-accepted');
-    return response.data;
-  },
-
-  rejectGroupInvite: async (inviteId: number) => {
-    const response = await api.post(`/messages/group-invites/${inviteId}/reject`);
-    emitMessageDataChanged('group-invite-rejected');
-    return response.data;
-  },
-
   addGroupMember: async (groupId: number, userId: number) => {
     const response = await api.post(`/messages/groups/${groupId}/members`, { user_id: userId });
     emitMessageDataChanged('group-member-invited');

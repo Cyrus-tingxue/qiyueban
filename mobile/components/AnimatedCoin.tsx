@@ -7,7 +7,7 @@ import Svg, { Defs, G, Path, Circle, Rect, Ellipse, Line, LinearGradient, Radial
  * 悬挂的红绳铜钱（极致红黑风格，防止被截断）
  * 仿造参考图：深邃红黑色调，高对比度，血红色的粗中国结，幽暗老旧的大铜钱。
  */
-function AnimatedCoin({ onClick, isAnimating = true, size = 90 }) {
+function AnimatedCoin({ isAnimating = true, size = 90 }) {
     // size 参数控制整体高度, 宽度按 viewBox 比例 (100:180) 自动适配
     
     const anim = useRef(new Animated.Value(0)).current;
