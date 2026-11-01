@@ -174,8 +174,34 @@ func (s *Server) createVersion(c *gin.Context) {
 		Error(c, 400, "请求参数无效")
 		return
 	}
-	row := model.AppVersion{VersionCode: in.VersionCode, VersionName: in.VersionName, DownloadURL: in.DownloadURL, UpdateLog: in.UpdateLog, ForceUpdate: in.ForceUpdate, CreatedAt: time.Now().UTC()}
-	s.DB.Create(&row)
+	if in.VersionCode < 1 || strings.TrimSpace(in.VersionName) == "" || strings.TrimSpace(in.DownloadURL) == "" {
+		Error(c, 400, "版本号、版本名称和下载地址不能为空")
+		return
+	}
+
+	var latest model.AppVersion
+	if err := s.DB.Order("version_code desc").First(&latest).Error; err == nil && in.VersionCode < latest.VersionCode {
+		Error(c, 409, "新版本号不能小于当前最新版本")
+		return
+	}
+
+	var row model.AppVersion
+	if err := s.DB.Where("version_code = ?", in.VersionCode).First(&row).Error; err == nil {
+		row.VersionName = strings.TrimSpace(in.VersionName)
+		row.DownloadURL = strings.TrimSpace(in.DownloadURL)
+		row.UpdateLog = in.UpdateLog
+		row.ForceUpdate = in.ForceUpdate
+		if err := s.DB.Save(&row).Error; err != nil {
+			Error(c, 500, "发布版本失败")
+			return
+		}
+	} else {
+		row = model.AppVersion{VersionCode: in.VersionCode, VersionName: strings.TrimSpace(in.VersionName), DownloadURL: strings.TrimSpace(in.DownloadURL), UpdateLog: in.UpdateLog, ForceUpdate: in.ForceUpdate, CreatedAt: time.Now().UTC()}
+		if err := s.DB.Create(&row).Error; err != nil {
+			Error(c, 500, "发布版本失败")
+			return
+		}
+	}
 	c.JSON(200, row)
 }
 func (s *Server) updateVersion(c *gin.Context) {

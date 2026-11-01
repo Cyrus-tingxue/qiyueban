@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/Colors';
 import { useLang } from '../../contexts/LanguageContext';
@@ -13,7 +14,8 @@ export default function CreatePostScreen() {
   const router = useRouter();
   const { t } = useLang();
   const { isLoggedIn } = useAuth();
-  
+  const insets = useSafeAreaInsets();
+
   const [categories, setCategories] = useState<{name: string}[]>([]);
   const [category, setCategory] = useState('');
   const [title, setTitle] = useState('');
@@ -73,7 +75,8 @@ export default function CreatePostScreen() {
     if (!result.canceled && result.assets[0]) {
       setSubmitting(true);
       try {
-        const uploadRes = await postService.uploadImage(result.assets[0].uri);
+        const asset = result.assets[0];
+        const uploadRes = await postService.uploadImage(asset.uri, asset.fileName, asset.mimeType);
         setContent(prev => prev + `\n[img:${uploadRes.url}]`);
       } catch {
         Alert.alert('Error', t('uploadFailed'));
@@ -84,7 +87,7 @@ export default function CreatePostScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardAvoidingView} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
         <ScrollView
           style={styles.scrollView}
@@ -129,7 +132,7 @@ export default function CreatePostScreen() {
           />
         </ScrollView>
         
-        <View style={styles.toolbar}>
+        <View style={[styles.toolbar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
           <TouchableOpacity style={styles.toolBtn} onPress={() => setShowEmojiPicker(true)}>
             <Ionicons name="happy-outline" size={24} color={Colors.textSecondary} />
             <Text style={styles.toolText}>{t('emojiBtn')}</Text>
@@ -168,7 +171,7 @@ const styles = StyleSheet.create({
   catTextActive: { color: Colors.textOnPrimary },
   input: { backgroundColor: Colors.inputBg, borderWidth: 1, borderColor: Colors.inputBorder, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, color: Colors.text, fontSize: 16 },
   contentInput: { minHeight: 240, paddingTop: 14 },
-  toolbar: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 12, paddingBottom: Platform.OS === 'android' ? 12 : 8, backgroundColor: Colors.surface, borderTopWidth: 1, borderTopColor: Colors.border, alignItems: 'center' },
+  toolbar: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 12, backgroundColor: Colors.surface, borderTopWidth: 1, borderTopColor: Colors.border, alignItems: 'center' },
   toolBtn: { flexDirection: 'row', alignItems: 'center', marginRight: 16, gap: 5, paddingVertical: 7 },
   toolText: { color: Colors.textSecondary, fontSize: 14 },
   publishBtn: { minWidth: 88, height: 46, paddingHorizontal: 20, borderRadius: 23, backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center' },

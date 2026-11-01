@@ -8,6 +8,7 @@ import { announcementService } from '../services/announcementService';
 import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import api from '../services/api';
+import Constants from 'expo-constants';
 
 export default function AdminScreen() {
   const { t } = useLang();
@@ -23,8 +24,9 @@ export default function AdminScreen() {
   const [banReason, setBanReason] = useState('');
   const [banIpStr, setBanIpStr] = useState('');
   
-  const [appVersionCode, setAppVersionCode] = useState('1');
-  const [appVersionName, setAppVersionName] = useState('1.0.0');
+  const currentVersionCode = Constants.expoConfig?.android?.versionCode || 1;
+  const [appVersionCode, setAppVersionCode] = useState(String(currentVersionCode + 1));
+  const [appVersionName, setAppVersionName] = useState('1.0.1');
   const [appDownloadUrl, setAppDownloadUrl] = useState('/api/uploads/qiyueban.apk');
   const [appUpdateLog, setAppUpdateLog] = useState('修复了一些Bug');
   
@@ -52,10 +54,11 @@ export default function AdminScreen() {
       try {
         const vResp = await api.get('/app-version/latest');
         if (vResp.data) {
-          setAppVersionCode(vResp.data.version_code.toString());
-          setAppVersionName(vResp.data.version_name);
-          setAppDownloadUrl(vResp.data.download_url);
-          setAppUpdateLog(vResp.data.update_log);
+          const raw = vResp.data;
+          setAppVersionCode(String(raw.version_code ?? raw.VersionCode ?? '1'));
+          setAppVersionName(raw.version_name ?? raw.VersionName ?? '1.0.0');
+          setAppDownloadUrl(raw.download_url ?? raw.DownloadURL ?? '/api/uploads/qiyueban.apk');
+          setAppUpdateLog(raw.update_log ?? raw.UpdateLog ?? '');
         }
       } catch (err) { console.log('No app version found'); }
 
@@ -174,18 +177,30 @@ export default function AdminScreen() {
           <TextInput style={styles.input} placeholder="下载链接" value={appDownloadUrl} onChangeText={setAppDownloadUrl} />
           <TextInput style={[styles.input, {height: 80}]} multiline placeholder="更新日志" value={appUpdateLog} onChangeText={setAppUpdateLog} />
           <TouchableOpacity style={styles.btn} onPress={async () => {
+            const versionCode = Number.parseInt(appVersionCode, 10);
+            if (!Number.isInteger(versionCode) || versionCode <= currentVersionCode) {
+              Alert.alert('提示', `版本号必须大于当前 App 版本 ${currentVersionCode}`);
+              return;
+            }
+            if (!appVersionName.trim() || !appDownloadUrl.trim()) {
+              Alert.alert('提示', '请填写版本名称和下载链接');
+              return;
+            }
             setLoading(true);
             try {
-              await api.post('/app-version/', {
-                version_code: parseInt(appVersionCode),
-                version_name: appVersionName,
-                download_url: appDownloadUrl,
-                update_log: appUpdateLog,
+              const response = await api.post('/app-version/', {
+                version_code: versionCode,
+                version_name: appVersionName.trim(),
+                download_url: appDownloadUrl.trim(),
+                update_log: appUpdateLog.trim(),
                 force_update: false
               });
-              Alert.alert('成功', '版本信息已发布');
-            } catch (e) {
-              Alert.alert('失败', '发布版本信息失败');
+              const raw = response.data || {};
+              const publishedCode = raw.version_code ?? raw.VersionCode ?? versionCode;
+              Alert.alert('成功', `版本 ${publishedCode} 已发布`);
+              await fetchData();
+            } catch (e: any) {
+              Alert.alert('失败', e.response?.data?.detail || '发布版本信息失败');
             } finally {
               setLoading(false);
             }

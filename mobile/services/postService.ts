@@ -1,5 +1,4 @@
 import api from './api';
-import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const postService = {
@@ -53,20 +52,22 @@ export const postService = {
     return response.data;
   },
 
-  async uploadImage(uri: string) {
+  async uploadImage(uri: string, fileName?: string | null, mimeType?: string | null) {
     const formData = new FormData();
-    const filename = uri.split('/').pop() || 'photo.jpg';
-    const match = /\.(\w+)$/.exec(filename);
-    const type = match ? `image/${match[1]}` : 'image/jpeg';
+    const filename = fileName || uri.split('/').pop()?.split('?')[0] || 'photo.jpg';
+    const extension = /\.(\w+)$/.exec(filename)?.[1]?.toLowerCase();
+    const type = mimeType || (extension ? `image/${extension === 'jpg' ? 'jpeg' : extension}` : 'image/jpeg');
 
+    // 保留 Expo 返回的 file:// / content:// URI；去掉 file:// 会导致 iOS 无法读取文件。
     formData.append('file', {
-      uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''),
+      uri,
       name: filename,
       type,
     } as any);
 
+    // 不手动设置 multipart 的 Content-Type，让原生网络层自动补 boundary。
     const response = await api.post('/upload/image', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: { 'Content-Type': undefined },
     });
     return response.data;
   },

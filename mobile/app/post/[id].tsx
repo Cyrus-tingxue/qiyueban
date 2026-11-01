@@ -142,7 +142,8 @@ export default function PostDetailScreen() {
     if (!result.canceled && result.assets[0]) {
       setSubmitting(true);
       try {
-        const uploadRes = await postService.uploadImage(result.assets[0].uri);
+        const asset = result.assets[0];
+        const uploadRes = await postService.uploadImage(asset.uri, asset.fileName, asset.mimeType);
         setReplyContent(prev => prev + `[img:${uploadRes.url}]`);
       } catch (e) {
         Alert.alert('Error', t('uploadFailed'));
