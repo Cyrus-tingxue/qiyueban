@@ -23,8 +23,9 @@ export const postService = {
     async uploadImage(file) {
         const formData = new FormData();
         formData.append('file', file);
+        // 不手动设置 multipart Content-Type，让浏览器自动补齐 boundary。
         const response = await api.post('/upload/image', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
+            headers: { 'Content-Type': undefined },
         });
         return response.data;
     },
