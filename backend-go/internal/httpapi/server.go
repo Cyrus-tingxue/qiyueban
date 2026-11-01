@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -383,28 +384,53 @@ func (s *Server) latestVersion(c *gin.Context) {
 	c.JSON(200, row)
 }
 
-// uploadImage 接收 multipart 字段 file，只允许图片扩展名和 image/* MIME 类型。
+// uploadImage 接收 multipart 字段 file，只允许常见图片格式。
 // 文件保存到共享的 data/uploads，以便 Nginx 和 API 使用同一目录提供静态资源。
 func (s *Server) uploadImage(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
-		Error(c, 400, "未上传文件")
+		Error(c, 400, "未上传文件，请重新选择图片")
 		return
 	}
 	ext := strings.ToLower(filepath.Ext(file.Filename))
 	allowed := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true}
-	if !allowed[ext] || !strings.HasPrefix(file.Header.Get("Content-Type"), "image/") {
-		Error(c, 400, "不支持的文件格式")
+	if !allowed[ext] {
+		Error(c, 400, "仅支持 JPG、PNG、GIF 和 WebP 图片")
 		return
 	}
-	name := uuid.New().String()
-	name = strings.ReplaceAll(name, "-", "") + ext
+
+	// 浏览器的 MIME 类型并不可靠，读取文件头进行校验，避免合法图片因 MIME 缺失被拒绝。
+	opened, err := file.Open()
+	if err != nil {
+		Error(c, 400, "无法读取图片文件")
+		return
+	}
+	defer opened.Close()
+	header := make([]byte, 512)
+	n, readErr := opened.Read(header)
+	if readErr != nil && readErr != io.EOF {
+		Error(c, 400, "无法读取图片文件")
+		return
+	}
+	contentType := http.DetectContentType(header[:n])
+	allowedContentType := map[string]bool{
+		"image/jpeg": true,
+		"image/png":  true,
+		"image/gif":  true,
+		"image/webp": true,
+	}
+	if !allowedContentType[contentType] {
+		Error(c, 400, "文件内容不是有效图片")
+		return
+	}
+
+	name := strings.ReplaceAll(uuid.New().String(), "-", "") + ext
 	if err := os.MkdirAll(s.Cfg.UploadDir, 0755); err != nil {
-		Error(c, 500, "图片保存失败")
+		Error(c, 500, "图片保存失败，请检查上传目录权限")
 		return
 	}
 	if err := c.SaveUploadedFile(file, filepath.Join(s.Cfg.UploadDir, name)); err != nil {
-		Error(c, 500, "图片保存失败")
+		Error(c, 500, "图片保存失败，请检查上传目录权限")
 		return
 	}
 	c.JSON(200, gin.H{"url": "/api/uploads/" + name})

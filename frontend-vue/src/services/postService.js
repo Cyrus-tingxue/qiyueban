@@ -22,12 +22,22 @@ export const postService = {
 
     async uploadImage(file) {
         const formData = new FormData();
-        formData.append('file', file);
-        // 不手动设置 multipart Content-Type，让浏览器自动补齐 boundary。
-        const response = await api.post('/upload/image', formData, {
-            headers: { 'Content-Type': undefined },
+        formData.append('file', file, file.name || 'photo.jpg');
+        const baseURL = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${baseURL}/upload/image`, {
+            method: 'POST',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            // 不设置 Content-Type，让浏览器自动生成 multipart boundary。
+            body: formData,
         });
-        return response.data;
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            const error = new Error(data.detail || `图片上传失败（${response.status}）`);
+            error.response = { data, status: response.status };
+            throw error;
+        }
+        return data;
     },
 
     async updatePost(id, data) {
